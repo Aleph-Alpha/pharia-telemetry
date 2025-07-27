@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2-alpha.0](https://github.com/Aleph-Alpha/pharia-telemetry/compare/v0.0.1-alpha.0...v0.0.2-alpha.0) (2025-07-27)
+
+
+### Bug Fixes
+
+* update JFrog authentication to use ARTIFACTORY_URL env var and add debugging ([8cc9587](https://github.com/Aleph-Alpha/pharia-telemetry/commit/8cc958780689b10f23e7894c449db2cc0d7b44ee))
+* use UV environment variables for authentication instead of CLI args ([161482b](https://github.com/Aleph-Alpha/pharia-telemetry/commit/161482b3144ba868814339bf3093d2b6e02e8421))
+
 ## [0.0.1-alpha.0](https://github.com/Aleph-Alpha/pharia-telemetry/compare/v0.0.0-alpha.0...v0.0.1-alpha.0) (2025-07-27)
 
 
