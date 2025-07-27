@@ -51,18 +51,18 @@ jobs:
         run: |
           uv build
           echo "Getting JFrog access token..."
-          export JFROG_ACCESS_TOKEN=$(.github/composites/get_jfrog_access_token.sh)
-          echo "Access token length: ${#JFROG_ACCESS_TOKEN}"
-          if [ -z "$JFROG_ACCESS_TOKEN" ]; then
+          export UV_PUBLISH_PASSWORD=$(.github/composites/get_jfrog_access_token.sh)
+          echo "Access token length: ${#UV_PUBLISH_PASSWORD}"
+          if [ -z "$UV_PUBLISH_PASSWORD" ]; then
             echo "ERROR: Failed to get JFrog access token"
             exit 1
           fi
           echo "Getting JFrog username..."
-          export JFROG_USERNAME=$(.github/composites/get_jfrog_access_token_subject.sh $JFROG_ACCESS_TOKEN)
-          echo "Username: $JFROG_USERNAME"
-          if [ -z "$JFROG_USERNAME" ]; then
+          export UV_PUBLISH_USERNAME=$(.github/composites/get_jfrog_access_token_subject.sh $UV_PUBLISH_PASSWORD)
+          echo "Username: $UV_PUBLISH_USERNAME"
+          if [ -z "$UV_PUBLISH_USERNAME" ]; then
             echo "ERROR: Failed to get JFrog username"
             exit 1
           fi
           echo "Publishing to Artifactory..."
-          uv publish --publish-url $ARTIFACTORY_URL/artifactory/api/pypi/$ARTIFACTORY_PYPI_REPOSITORY/ --username $JFROG_USERNAME --password $JFROG_ACCESS_TOKEN
+          uv publish --publish-url $ARTIFACTORY_URL/artifactory/api/pypi/$ARTIFACTORY_PYPI_REPOSITORY/
