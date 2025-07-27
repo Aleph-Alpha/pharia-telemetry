@@ -33,6 +33,9 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    env:
+      ARTIFACTORY_URL: https://alephalpha.jfrog.io
+      ARTIFACTORY_PYPI_REPOSITORY: "pharia-telemetry"
     steps:
       - uses: actions/checkout@v4
 
@@ -44,7 +47,9 @@ jobs:
         with:
           python-version-file: "pyproject.toml"
 
-      - name: Build and publish to Artifactory PyPI repository
+      - name: Build and publish to JFrog Artifactory repository
         run: |
           uv build
-          uv publish
+          export JFROG_ACCESS_TOKEN=$(.github/composites/get_jfrog_access_token.sh)
+          export JFROG_USERNAME=$(.github/composites/get_jfrog_access_token_subject.sh $JFROG_ACCESS_TOKEN)
+          uv publish --publish-url $ARTIFACTORY_URL/artifactory/api/pypi/$ARTIFACTORY_PYPI_REPOSITORY/ --username $JFROG_USERNAME --password $JFROG_ACCESS_TOKEN
