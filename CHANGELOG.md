@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.1-alpha.0](https://github.com/Aleph-Alpha/pharia-telemetry/compare/v0.0.0-alpha.0...v0.0.1-alpha.0) (2025-07-27)
+
+
+### Features
+
+* add JFrog access token scripts and update CI workflow ([87c4466](https://github.com/Aleph-Alpha/pharia-telemetry/commit/87c44666333652a50bce039c9a243a3334cc086d))
+* initial OpenTelemetry telemetry library for Pharia services ([3adf94d](https://github.com/Aleph-Alpha/pharia-telemetry/commit/3adf94d0a0d51efd5df1d09fb10c74b39e9dd9d8))
+
 ## [Unreleased]
 
 ### Added
