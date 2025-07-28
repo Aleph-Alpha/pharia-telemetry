@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.3-alpha.0](https://github.com/Aleph-Alpha/pharia-telemetry/compare/v0.0.2-alpha.0...v0.0.3-alpha.0) (2025-07-28)
+
+
+### Features
+
+* trigger release with correct artifactory repository name ([d01516d](https://github.com/Aleph-Alpha/pharia-telemetry/commit/d01516d6a2d43533a42d7835beb23e584445ca18))
+
+
+### Bug Fixes
+
+* update repository name to pharia-telemetry-pypi to match Artifactory configuration ([3f8a989](https://github.com/Aleph-Alpha/pharia-telemetry/commit/3f8a989653b24923c1981c54a1ed9e20e7be796b))
+
 ## [0.0.2-alpha.0](https://github.com/Aleph-Alpha/pharia-telemetry/compare/v0.0.1-alpha.0...v0.0.2-alpha.0) (2025-07-27)
 
 
