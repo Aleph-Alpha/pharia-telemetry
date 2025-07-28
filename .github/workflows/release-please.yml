@@ -35,7 +35,7 @@ jobs:
       id-token: write
     env:
       ARTIFACTORY_URL: https://alephalpha.jfrog.io
-      ARTIFACTORY_PYPI_REPOSITORY: "pharia-telemetry"
+      ARTIFACTORY_PYPI_REPOSITORY: "pharia-telemetry-pypi"
     steps:
       - uses: actions/checkout@v4
 

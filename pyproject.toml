@@ -42,9 +42,9 @@ dependencies = [
 
 # Internal registry configuration - prevents accidental PyPI publication
 [[tool.uv.index]]
-name = "pharia-telemetry"
-url = "https://alephalpha.jfrog.io/artifactory/api/pypi/pharia-telemetry"
-publish-url = "https://alephalpha.jfrog.io/artifactory/api/pypi/pharia-telemetry"
+name = "pharia-telemetry-pypi"
+url = "https://alephalpha.jfrog.io/artifactory/api/pypi/pharia-telemetry-pypi"
+publish-url = "https://alephalpha.jfrog.io/artifactory/api/pypi/pharia-telemetry-pypi"
 explicit = true
 
 [dependency-groups]
