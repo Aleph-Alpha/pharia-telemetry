@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.4-alpha.0](https://github.com/Aleph-Alpha/pharia-telemetry/compare/v0.0.3-alpha.0...v0.0.4-alpha.0) (2025-07-29)
+
+
+### Features
+
+* forcing release ([a8c8560](https://github.com/Aleph-Alpha/pharia-telemetry/commit/a8c8560cf4a97b5bf7ab44215fe24b5b5fdfcfd3))
+
 ## [0.0.3-alpha.0](https://github.com/Aleph-Alpha/pharia-telemetry/compare/v0.0.2-alpha.0...v0.0.3-alpha.0) (2025-07-28)
 
 
