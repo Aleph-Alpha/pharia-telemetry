@@ -1,5 +1,6 @@
 .PHONY: help install install-dev test test-cov lint format type-check clean build docs
 
+
 help:
 	@echo "Available commands:"
 	@echo "  install      Install the package"
