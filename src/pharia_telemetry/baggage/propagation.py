@@ -3,6 +3,10 @@ OpenTelemetry baggage and span context propagation utilities.
 
 This module provides helpers for propagating trace context across service boundaries
 using OpenTelemetry baggage and setting span attributes for observability.
+
+NOTE: If your application uses Pydantic Logfire, these utilities are generally not needed.
+Pydantic Logfire provides built-in baggage convenience functions and automatically handles
+baggage propagation. These are primarily for applications that don't use Pydantic Logfire.
 """
 
 import logging
@@ -86,7 +90,7 @@ def set_gen_ai_span_attributes(
             return
 
         # Import here to avoid circular imports
-        from pharia_telemetry.constants.gen_ai import GenAI
+        from pharia_telemetry.sem_conv.gen_ai import GenAI
 
         # Set required GenAI semantic convention attributes
         target_span.set_attribute(GenAI.OPERATION_NAME, operation_name)

@@ -15,7 +15,7 @@ from pharia_telemetry import (
     set_genai_span_usage,
     set_genai_span_response,
 )
-from pharia_telemetry.constants.gen_ai import GenAI
+from pharia_telemetry.sem_conv.gen_ai import GenAI
 
 # Setup telemetry
 setup_telemetry("my-service")
@@ -209,7 +209,7 @@ RESEARCH_ASSISTANT = "pharia_research_assistant"
 ```python
 import phariaai_client
 from pharia_telemetry import setChatSpan, set_genai_span_usage, set_genai_span_response
-from pharia_telemetry.constants.gen_ai import GenAI
+from pharia_telemetry.sem_conv.gen_ai import GenAI
 
 def chat_with_phariaai(messages, model="llama-3.1-8B"):
     with setChatSpan(
@@ -243,7 +243,7 @@ def chat_with_phariaai(messages, model="llama-3.1-8B"):
 
 ```python
 from pharia_telemetry import setAgentInvocationSpan
-from pharia_telemetry.constants.gen_ai import GenAI
+from pharia_telemetry.sem_conv.gen_ai import GenAI
 
 class MathTutorAgent:
     def invoke(self, query: str, conversation_id: str):
@@ -298,7 +298,7 @@ class CalculatorTool:
 
 ```python
 from pharia_telemetry import setEmbeddingsSpan
-from pharia_telemetry.constants.gen_ai import GenAI
+from pharia_telemetry.sem_conv.gen_ai import GenAI
 
 def generate_embeddings(texts: list[str]):
     with setEmbeddingsSpan(
@@ -362,7 +362,7 @@ If you were using the old API, here's how to migrate:
 ### Before (Old API)
 ```python
 from pharia_telemetry import create_genai_span
-from pharia_telemetry.constants.telemetry import Spans
+from pharia_telemetry.sem_conv.baggage import Spans
 
 with create_genai_span(
     operation_name=Spans.Values.GenAiOperationName.CHAT,
@@ -375,7 +375,7 @@ with create_genai_span(
 ### After (New API)
 ```python
 from pharia_telemetry import setChatSpan
-from pharia_telemetry.constants.gen_ai import GenAI
+from pharia_telemetry.sem_conv.gen_ai import GenAI
 
 with setChatSpan(
     model="llama-3.1-8B",

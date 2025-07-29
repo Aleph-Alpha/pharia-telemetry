@@ -1,70 +1,72 @@
-"""Pharia Telemetry - Shared telemetry utilities and components."""
+"""
+Pharia Telemetry - OpenTelemetry utilities for Pharia services.
+
+This package provides a clean, consolidated API for OpenTelemetry tracing
+with semantic conventions for GenAI operations.
+"""
 
 from importlib.metadata import version
 
-# Constants (namespaced)
-from pharia_telemetry import constants
-
-# Mid-level utilities for advanced use cases
+# Constants available via direct import: from pharia_telemetry.constants import ...
+# Baggage utilities
 from pharia_telemetry.baggage import (
     get_baggage_item,
     set_baggage_item,
 )
 from pharia_telemetry.baggage.propagation import set_gen_ai_span_attributes
 
-# High-level convenience API (primary interface for most users)
-from pharia_telemetry.gen_ai import (
-    add_context_to_logs,
+# Logging integration
+from pharia_telemetry.logging import create_context_injector
+
+# GenAI convenience functions
+# Constants
+from pharia_telemetry.sem_conv.gen_ai import (
+    # Data structures
+    DataContext,
+    GenAI,
+    create_agent_creation_span,
+    create_agent_invocation_span,
+    # Convenience functions for specific operations
+    create_chat_span,
+    create_embeddings_span,
     # Core GenAI functions
     create_genai_span,
-    get_current_context,
+    create_tool_execution_span,
     set_genai_span_response,
     set_genai_span_usage,
-    setAgentCreationSpan,
-    setAgentInvocationSpan,
-    # Convenience functions for specific operations
-    setChatSpan,
-    setEmbeddingsSpan,
-    # Alias
-    setGenAiSpan,
-    setToolExecutionSpan,
-    setup_telemetry,
 )
-from pharia_telemetry.logging import create_context_injector
+
+# Core setup function
+from pharia_telemetry.setup import get_tracer, setup_telemetry
 
 __version__ = version("pharia-telemetry")
 __author__ = "Aleph Alpha Engineering"
 __email__ = "engineering@aleph-alpha.com"
 
-# Clean Public API - Comprehensive GenAI support
+# Clean, consolidated public API
 __all__ = [
-    # Version info
+    # Setup
+    "setup_telemetry",
+    "get_tracer",
+    # GenAI spans
+    "create_genai_span",
+    "set_genai_span_usage",
+    "set_genai_span_response",
+    "DataContext",
+    # GenAI convenience functions
+    "create_chat_span",
+    "create_embeddings_span",
+    "create_tool_execution_span",
+    "create_agent_creation_span",
+    "create_agent_invocation_span",
+    # Constants
+    "GenAI",
+    # Baggage
+    "set_baggage_item",
+    "get_baggage_item",
+    "set_gen_ai_span_attributes",
+    # Logging
+    "create_context_injector",
+    # Version
     "__version__",
-    # High-level convenience API (90% of users)
-    "setup_telemetry",  # One-function setup for most services
-    "add_context_to_logs",  # Easy logging integration
-    "get_current_context",  # Manual context access
-    # GenAI convenience functions - Primary API
-    "create_genai_span",  # Create GenAI spans with semantic conventions
-    "set_genai_span_usage",  # Set token usage on GenAI spans
-    "set_genai_span_response",  # Set response attributes on GenAI spans
-    # Operation-specific convenience functions (TypeScript parity)
-    "setChatSpan",  # Chat operations
-    "setToolExecutionSpan",  # Tool execution
-    "setAgentCreationSpan",  # Agent creation
-    "setEmbeddingsSpan",  # Embeddings operations
-    "setAgentInvocationSpan",  # Agent invocation
-    "setGenAiSpan",  # Alias for create_genai_span
-    # Essential utilities (advanced users)
-    "set_baggage_item",  # Set context for propagation
-    "get_baggage_item",  # Get propagated context
-    "create_context_injector",  # Custom logging integration
-    "set_gen_ai_span_attributes",  # Low-level GenAI span attributes
-    # Constants (namespaced)
-    "constants",  # Access via constants.Baggage.USER_ID, etc.
 ]
-
-# Advanced API available via explicit imports:
-# - pharia_telemetry.baggage.* (span processors, advanced baggage functions)
-# - pharia_telemetry.logging.* (individual injector classes, structlog processor)
-# - pharia_telemetry.utils.* (low-level setup functions)

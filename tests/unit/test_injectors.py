@@ -2,7 +2,6 @@
 
 from unittest.mock import Mock, patch
 
-from pharia_telemetry.constants.telemetry import BaggageKeys
 from pharia_telemetry.logging.injectors import (
     BaggageContextInjector,
     CompositeContextInjector,
@@ -11,6 +10,7 @@ from pharia_telemetry.logging.injectors import (
     create_full_context_injector,
     create_trace_injector,
 )
+from pharia_telemetry.sem_conv.baggage import BaggageKeys
 
 
 class TestTraceContextInjector:

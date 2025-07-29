@@ -15,7 +15,7 @@ from pharia_telemetry import (
     set_genai_span_usage,
     setup_telemetry,
 )
-from pharia_telemetry.constants.gen_ai import GenAI
+from pharia_telemetry.sem_conv.gen_ai import GenAI
 
 
 def simulate_chat_completion() -> dict[str, Any]:

@@ -3,6 +3,10 @@ Custom OpenTelemetry span processors for automatic baggage propagation.
 
 This module provides specialized span processors that enhance spans with
 additional context and correlation data from OpenTelemetry baggage.
+
+NOTE: If your application uses Pydantic Logfire, this span processor is generally not needed.
+Pydantic Logfire automatically adds baggage to spans and provides built-in baggage management.
+This is primarily for applications that don't use Pydantic Logfire.
 """
 
 import logging

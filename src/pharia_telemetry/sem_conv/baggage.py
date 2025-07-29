@@ -4,7 +4,7 @@ OpenTelemetry baggage keys and general telemetry constants.
 This module provides standardized OpenTelemetry baggage keys and semantic conventions
 for proper trace correlation and context propagation across Pharia services.
 
-For GenAI-specific constants, see pharia_telemetry.constants.gen_ai module.
+For GenAI-specific constants, see pharia_telemetry.sem_conv.gen_ai_constants module.
 
 Based on OpenTelemetry semantic conventions:
 - https://opentelemetry.io/docs/specs/semconv/general/general-attributes/
@@ -71,7 +71,7 @@ class Spans:
     """
     OpenTelemetry span attribute keys for general (non-GenAI) operations.
 
-    For GenAI-specific span attributes, use pharia_telemetry.constants.gen_ai.GenAI
+    For GenAI-specific span attributes, use pharia_telemetry.sem_conv.gen_ai_constants.GenAI
     """
 
     # Intelligence Layer correlation (Pharia-specific)

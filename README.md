@@ -182,7 +182,7 @@ structlog.configure(processors=[
 
 ### GenAI Operations
 ```python
-from pharia_telemetry.constants import GenAI
+from pharia_telemetry.sem_conv.gen_ai import GenAI
 from pharia_telemetry.baggage import set_gen_ai_span_attributes
 
 set_gen_ai_span_attributes(

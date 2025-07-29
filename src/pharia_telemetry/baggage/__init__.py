@@ -1,4 +1,10 @@
-"""OpenTelemetry baggage utilities for context propagation."""
+"""
+OpenTelemetry baggage utilities for context propagation.
+
+NOTE: If your application uses Pydantic Logfire, these utilities are generally not needed.
+Pydantic Logfire provides built-in baggage convenience functions and automatically adds
+baggage to spans. These are primarily for applications that don't use Pydantic Logfire.
+"""
 
 from pharia_telemetry.baggage.processors import BaggageSpanProcessor
 from pharia_telemetry.baggage.propagation import (

@@ -1,6 +1,6 @@
 """Tests for telemetry constants module."""
 
-from pharia_telemetry.constants.telemetry import Baggage, BaggageKeys, Spans
+from pharia_telemetry.sem_conv.baggage import Baggage, BaggageKeys, Spans
 
 
 class TestBaggageConstants:
@@ -86,11 +86,11 @@ class TestBackwardsCompatibility:
             == Baggage.PRIVACY_POLICY_USER_MESSAGES
         )
 
-    def test_legacy_imports(self):
-        """Test that legacy import paths still work."""
-        from pharia_telemetry.constants import Baggage as ImportedBaggage
-        from pharia_telemetry.constants import BaggageKeys as ImportedBaggageKeys
-        from pharia_telemetry.constants import Spans as ImportedSpans
+    def test_direct_imports(self):
+        """Test that direct import paths work correctly."""
+        from pharia_telemetry.sem_conv.baggage import Baggage as ImportedBaggage
+        from pharia_telemetry.sem_conv.baggage import BaggageKeys as ImportedBaggageKeys
+        from pharia_telemetry.sem_conv.baggage import Spans as ImportedSpans
 
         assert ImportedBaggage.FEATURE_FLAGS == "pharia.feature.flags"
         assert (

@@ -9,8 +9,8 @@ from pharia_telemetry.baggage.propagation import (
     set_baggage_span_attributes,
     set_gen_ai_span_attributes,
 )
-from pharia_telemetry.constants.gen_ai import GenAI
-from pharia_telemetry.constants.telemetry import Baggage
+from pharia_telemetry.sem_conv.baggage import Baggage
+from pharia_telemetry.sem_conv.gen_ai import GenAI
 
 
 class TestSetBaggageSpanAttributes:

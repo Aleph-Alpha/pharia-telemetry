@@ -1,4 +1,10 @@
-"""Logging utilities and structured logging components."""
+"""
+Logging utilities and structured logging components.
+
+NOTE: If your application uses Pydantic Logfire, these logging utilities are generally not needed.
+Pydantic Logfire provides comprehensive structured logging with automatic trace and baggage
+context injection. These are primarily for applications that don't use Pydantic Logfire.
+"""
 
 # Primary API: Framework-agnostic injectors
 from pharia_telemetry.logging.injectors import (
