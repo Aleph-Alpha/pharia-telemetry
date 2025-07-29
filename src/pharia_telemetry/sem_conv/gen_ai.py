@@ -41,42 +41,51 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, Dict, Generator, List, Optional
 
-# Import GenAI semantic convention constants from OpenTelemetry
-from opentelemetry.semconv._incubating.attributes.gen_ai_attributes import (
-    # Core GenAI attributes
-    GEN_AI_AGENT_ID,
-    GEN_AI_AGENT_NAME,
-    GEN_AI_CONVERSATION_ID,
-    # OpenAI specific attributes
-    GEN_AI_OPENAI_REQUEST_SERVICE_TIER,
-    GEN_AI_OPENAI_RESPONSE_SERVICE_TIER,
-    GEN_AI_OPENAI_RESPONSE_SYSTEM_FINGERPRINT,
-    GEN_AI_OPERATION_NAME,
-    GEN_AI_OUTPUT_TYPE,
-    GEN_AI_REQUEST_MAX_TOKENS,
-    GEN_AI_REQUEST_MODEL,
-    GEN_AI_REQUEST_SEED,
-    # Request/Response content attributes
-    GEN_AI_REQUEST_TEMPERATURE,
-    GEN_AI_REQUEST_TOP_P,
-    GEN_AI_RESPONSE_FINISH_REASONS,
-    # Response attributes
-    GEN_AI_RESPONSE_ID,
-    GEN_AI_RESPONSE_MODEL,
-    GEN_AI_SYSTEM,
-    GEN_AI_TOKEN_TYPE,
-    GEN_AI_TOOL_CALL_ID,
-    GEN_AI_TOOL_DESCRIPTION,
-    # Tool attributes
-    GEN_AI_TOOL_NAME,
-    # Usage and token attributes
-    GEN_AI_USAGE_INPUT_TOKENS,
-    GEN_AI_USAGE_OUTPUT_TOKENS,
-)
-
 from pharia_telemetry.setup import get_tracer
 
 logger = logging.getLogger(__name__)
+
+# GenAI semantic convention constants
+# Based on https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/
+
+# Core GenAI attributes
+GEN_AI_AGENT_ID = "gen_ai.agent.id"
+GEN_AI_AGENT_NAME = "gen_ai.agent.name"
+GEN_AI_CONVERSATION_ID = "gen_ai.conversation.id"
+
+# OpenAI specific attributes
+GEN_AI_OPENAI_REQUEST_SERVICE_TIER = "gen_ai.openai.request.service_tier"
+GEN_AI_OPENAI_RESPONSE_SERVICE_TIER = "gen_ai.openai.response.service_tier"
+GEN_AI_OPENAI_RESPONSE_SYSTEM_FINGERPRINT = "gen_ai.openai.response.system_fingerprint"
+
+# Operation and system attributes
+GEN_AI_OPERATION_NAME = "gen_ai.operation.name"
+GEN_AI_SYSTEM = "gen_ai.system"
+
+# Request attributes
+GEN_AI_REQUEST_MAX_TOKENS = "gen_ai.request.max_tokens"
+GEN_AI_REQUEST_MODEL = "gen_ai.request.model"
+GEN_AI_REQUEST_SEED = "gen_ai.request.seed"
+GEN_AI_REQUEST_TEMPERATURE = "gen_ai.request.temperature"
+GEN_AI_REQUEST_TOP_P = "gen_ai.request.top_p"
+
+# Response attributes
+GEN_AI_RESPONSE_FINISH_REASONS = "gen_ai.response.finish_reasons"
+GEN_AI_RESPONSE_ID = "gen_ai.response.id"
+GEN_AI_RESPONSE_MODEL = "gen_ai.response.model"
+
+# Output and token attributes
+GEN_AI_OUTPUT_TYPE = "gen_ai.output.type"
+GEN_AI_TOKEN_TYPE = "gen_ai.token.type"
+
+# Tool attributes
+GEN_AI_TOOL_CALL_ID = "gen_ai.tool.call.id"
+GEN_AI_TOOL_DESCRIPTION = "gen_ai.tool.description"
+GEN_AI_TOOL_NAME = "gen_ai.tool.name"
+
+# Usage and token attributes
+GEN_AI_USAGE_INPUT_TOKENS = "gen_ai.usage.input_tokens"
+GEN_AI_USAGE_OUTPUT_TOKENS = "gen_ai.usage.output_tokens"
 
 try:
     # Check if OpenTelemetry is available

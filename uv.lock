@@ -649,12 +649,11 @@ wheels = [
 
 [[package]]
 name = "pharia-telemetry"
-version = "0.0.3-alpha.0"
+version = "0.0.3a0"
 source = { editable = "." }
 dependencies = [
     { name = "opentelemetry-api" },
     { name = "opentelemetry-sdk" },
-    { name = "opentelemetry-semantic-conventions" },
     { name = "pydantic" },
 ]
 
@@ -682,9 +681,8 @@ structlog = [
 
 [package.metadata]
 requires-dist = [
-    { name = "opentelemetry-api", specifier = ">=1.20.0" },
-    { name = "opentelemetry-sdk", specifier = ">=1.20.0" },
-    { name = "opentelemetry-semantic-conventions", specifier = ">=0.41b0" },
+    { name = "opentelemetry-api", specifier = ">=1.29.0" },
+    { name = "opentelemetry-sdk", specifier = ">=1.29.0" },
     { name = "pydantic", specifier = ">=2.0.0" },
 ]
 
