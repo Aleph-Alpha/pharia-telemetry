@@ -16,8 +16,19 @@ from pharia_telemetry.logging.injectors import (
     create_trace_injector,
 )
 
-# Modern alias for cleaner API
+# Structlog-specific processors
+from pharia_telemetry.logging.processor import (
+    StructlogBaggageProcessor,
+    StructlogCompositeProcessor,
+    StructlogTraceProcessor,
+    create_structlog_baggage_processor,
+    create_structlog_full_context_processor,
+    create_structlog_trace_processor,
+)
+
+# Modern aliases for cleaner API
 create_context_injector = create_full_context_injector
+create_structlog_processor = create_structlog_full_context_processor
 
 __all__: list[str] = [
     # Primary API: Framework-agnostic injectors
@@ -28,4 +39,12 @@ __all__: list[str] = [
     "create_baggage_injector",
     "create_full_context_injector",
     "create_context_injector",  # Modern alias
+    # Structlog-specific processors
+    "StructlogTraceProcessor",
+    "StructlogBaggageProcessor",
+    "StructlogCompositeProcessor",
+    "create_structlog_trace_processor",
+    "create_structlog_baggage_processor",
+    "create_structlog_full_context_processor",
+    "create_structlog_processor",  # Modern alias
 ]

@@ -39,22 +39,15 @@ Based on:
 import logging
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Dict, Generator, List, Optional
+from typing import Any, ContextManager, Dict, Generator, List, Optional
+
+from opentelemetry.trace import NonRecordingSpan, Span, SpanKind
+from opentelemetry.trace.span import INVALID_SPAN_CONTEXT
 
 from pharia_telemetry.sem_conv.gen_ai import GenAI
 from pharia_telemetry.setup.setup import get_tracer
 
 logger = logging.getLogger(__name__)
-
-try:
-    # Check if OpenTelemetry is available
-    import opentelemetry  # noqa: F401
-    from opentelemetry.trace import SpanKind
-
-    OTEL_AVAILABLE = True
-except ImportError:
-    OTEL_AVAILABLE = False
-    logger.warning("OpenTelemetry not available - GenAI functions will be limited")
 
 
 @dataclass
@@ -100,9 +93,9 @@ def create_genai_span(
     conversation_id: Optional[str] = None,
     tool_name: Optional[str] = None,
     data_context: Optional[DataContext] = None,
-    span_kind: SpanKind = SpanKind.CLIENT,
+    span_kind: Optional[SpanKind] = None,
     additional_attributes: Optional[Dict[str, Any]] = None,
-) -> Generator[Any, None, None]:
+) -> Generator[Span, None, None]:
     """
     Create a GenAI span following OpenTelemetry semantic conventions.
 
@@ -118,7 +111,7 @@ def create_genai_span(
         additional_attributes: Additional span attributes for flexibility
 
     Yields:
-        Span: The OpenTelemetry span
+        Span: The OpenTelemetry span or no-op span
 
     Example:
         ```python
@@ -133,14 +126,15 @@ def create_genai_span(
             span.set_attribute("gen_ai.usage.input_tokens", response.usage.prompt_tokens)
         ```
     """
-    if not OTEL_AVAILABLE:
-        yield None
-        return
-
     tracer = get_tracer()
     if not tracer:
-        yield None
+        # Create a proper NonRecordingSpan with context when no tracer is available
+        yield NonRecordingSpan(INVALID_SPAN_CONTEXT)
         return
+
+    # Set default span kind if not provided
+    if span_kind is None:
+        span_kind = SpanKind.CLIENT
 
     # Build span name according to OpenTelemetry GenAI semantic conventions
     if operation_name == GenAI.Values.OperationName.CREATE_AGENT:
@@ -198,7 +192,7 @@ def create_chat_span(
     conversation_id: Optional[str] = None,
     data_context: Optional[DataContext] = None,
     additional_attributes: Optional[Dict[str, Any]] = None,
-) -> Any:
+) -> ContextManager[Span]:
     """
     Create a chat span with sensible defaults.
 
@@ -241,7 +235,7 @@ def create_embeddings_span(
     model: Optional[str] = None,
     data_context: Optional[DataContext] = None,
     additional_attributes: Optional[Dict[str, Any]] = None,
-) -> Any:
+) -> ContextManager[Span]:
     """
     Create an embeddings span.
 
@@ -280,7 +274,7 @@ def create_tool_execution_span(
     conversation_id: Optional[str] = None,
     data_context: Optional[DataContext] = None,
     additional_attributes: Optional[Dict[str, Any]] = None,
-) -> Any:
+) -> ContextManager[Span]:
     """
     Create a tool execution span with sensible defaults.
 
@@ -323,7 +317,7 @@ def create_agent_creation_span(
     conversation_id: Optional[str] = None,
     data_context: Optional[DataContext] = None,
     additional_attributes: Optional[Dict[str, Any]] = None,
-) -> Any:
+) -> ContextManager[Span]:
     """
     Create an agent creation span.
 
@@ -366,7 +360,7 @@ def create_agent_invocation_span(
     conversation_id: Optional[str] = None,
     data_context: Optional[DataContext] = None,
     additional_attributes: Optional[Dict[str, Any]] = None,
-) -> Any:
+) -> ContextManager[Span]:
     """
     Create an agent invocation span with sensible defaults.
 
@@ -432,9 +426,6 @@ def set_genai_span_usage(
             )
         ```
     """
-    if not OTEL_AVAILABLE:
-        return
-
     try:
         from opentelemetry import trace
 
@@ -490,9 +481,6 @@ def set_genai_span_response(
             )
         ```
     """
-    if not OTEL_AVAILABLE:
-        return
-
     try:
         from opentelemetry import trace
 

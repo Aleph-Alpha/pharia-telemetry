@@ -4,10 +4,6 @@ Generic context injectors for structured logging.
 This module provides modular, framework-agnostic injectors for adding OpenTelemetry
 context to log records. These work with any logging framework that uses dictionaries
 for structured data.
-
-NOTE: If your application uses Pydantic Logfire, these injectors are generally not needed.
-Pydantic Logfire provides comprehensive structured logging with automatic trace and baggage
-context injection. These are primarily for applications that don't use Pydantic Logfire.
 """
 
 import logging
