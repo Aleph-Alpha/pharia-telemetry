@@ -6,7 +6,7 @@ to provide seamless integration with structlog's processing pipeline.
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, MutableMapping, Optional
 
 from pharia_telemetry.logging.injectors import (
     BaggageContextInjector,
@@ -19,13 +19,10 @@ logger = logging.getLogger(__name__)
 # Try to import structlog
 try:
     import structlog  # noqa: F401
-    from structlog.typing import BindableLogger
 
     STRUCTLOG_AVAILABLE = True
 except ImportError:
     STRUCTLOG_AVAILABLE = False
-    # Fallback type for when structlog isn't available
-    BindableLogger = Any  # type: ignore
 
 
 class StructlogTraceProcessor:
@@ -71,8 +68,8 @@ class StructlogTraceProcessor:
         )
 
     def __call__(
-        self, logger: BindableLogger, method_name: str, event_dict: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, logger: Any, method_name: str, event_dict: MutableMapping[str, Any]
+    ) -> MutableMapping[str, Any]:
         """
         Process log event and inject trace context.
 
@@ -84,7 +81,7 @@ class StructlogTraceProcessor:
         Returns:
             Enhanced event dictionary with trace context
         """
-        return self.injector.inject(event_dict)
+        return self.injector.inject(dict(event_dict))
 
 
 class StructlogBaggageProcessor:
@@ -124,8 +121,8 @@ class StructlogBaggageProcessor:
         )
 
     def __call__(
-        self, logger: BindableLogger, method_name: str, event_dict: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, logger: Any, method_name: str, event_dict: MutableMapping[str, Any]
+    ) -> MutableMapping[str, Any]:
         """
         Process log event and inject baggage context.
 
@@ -137,7 +134,7 @@ class StructlogBaggageProcessor:
         Returns:
             Enhanced event dictionary with baggage context
         """
-        return self.injector.inject(event_dict)
+        return self.injector.inject(dict(event_dict))
 
 
 class StructlogCompositeProcessor:
@@ -171,8 +168,8 @@ class StructlogCompositeProcessor:
         self.injector = CompositeContextInjector(injectors)
 
     def __call__(
-        self, logger: BindableLogger, method_name: str, event_dict: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, logger: Any, method_name: str, event_dict: MutableMapping[str, Any]
+    ) -> MutableMapping[str, Any]:
         """
         Process log event and inject all contexts.
 
@@ -184,7 +181,7 @@ class StructlogCompositeProcessor:
         Returns:
             Enhanced event dictionary with all contexts
         """
-        return self.injector.inject(event_dict)
+        return self.injector.inject(dict(event_dict))
 
 
 def create_structlog_trace_processor(
