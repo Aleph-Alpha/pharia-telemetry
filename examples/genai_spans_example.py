@@ -3,14 +3,18 @@
 Example script demonstrating GenAI span convenience functions.
 
 This script shows how to use the pharia-telemetry library to create
-GenAI spans following OpenTelemetry semantic conventions.
+GenAI spans following OpenTelemetry semantic conventions. The convenience
+functions (create_chat_span, create_embeddings_span, create_tool_execution_span)
+automatically detect sync/async context and work seamlessly in both environments.
 """
 
 import time
 from typing import Any
 
 from pharia_telemetry import (
-    create_genai_span,
+    create_chat_span,
+    create_embeddings_span,
+    create_tool_execution_span,
     set_genai_span_response,
     set_genai_span_usage,
     setup_telemetry,
@@ -23,11 +27,9 @@ def simulate_chat_completion() -> dict[str, Any]:
     print("🤖 Simulating chat completion...")
 
     # Create a chat completion span
-    with create_genai_span(
-        operation_name=GenAI.Values.OperationName.CHAT,
+    with create_chat_span(
         agent_name="Pharia QA Assistant",
         model="llama-3.1-8B",
-        system=GenAI.Values.System.PHARIA_AI,
         conversation_id="conv-12345",
         agent_id=GenAI.Values.PhariaAgentId.QA_CHAT,
     ) as _span:
@@ -59,13 +61,11 @@ def simulate_tool_execution() -> dict[str, Any]:
     print("\n🔧 Simulating tool execution...")
 
     # Create a tool execution span
-    with create_genai_span(
-        operation_name=GenAI.Values.OperationName.EXECUTE_TOOL,
-        agent_name="Tool Executor",
-        system=GenAI.Values.System.PHARIA_AI,
+    with create_tool_execution_span(
+        tool_name="calculate_sum",
+        agent_id=GenAI.Values.PhariaAgentId.QA_CHAT,
         conversation_id="conv-12345",
         additional_attributes={
-            GenAI.TOOL_NAME: "calculate_sum",
             GenAI.TOOL_DESCRIPTION: "Calculate the sum of two numbers",
             GenAI.TOOL_CALL_ID: "call_abc123",
         },
@@ -83,11 +83,8 @@ def simulate_embeddings() -> dict[str, Any]:
     print("\n📊 Simulating embeddings generation...")
 
     # Create an embeddings span
-    with create_genai_span(
-        operation_name=GenAI.Values.OperationName.EMBEDDINGS,
-        agent_name="Embeddings Generator",
+    with create_embeddings_span(
         model="llama-3.1-8B-embeddings",
-        system=GenAI.Values.System.PHARIA_AI,
         additional_attributes={
             "gen_ai.request.encoding_format": "float",
             "gen_ai.request.dimensions": 1536,
@@ -144,6 +141,7 @@ def main() -> int:
     print("✅ GenAI spans demonstration completed successfully!")
     print()
     print("📝 Key features demonstrated:")
+    print("   • Smart convenience functions that auto-detect sync/async context")
     print("   • Different GenAI operation types (chat, tools, embeddings)")
     print("   • Proper span attribute setting following OpenTelemetry conventions")
     print("   • Token usage tracking")

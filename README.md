@@ -48,22 +48,26 @@ set_baggage_item(constants.Baggage.USER_ID, "user-123")
 
 ## 🎯 Clean API Design
 
-pharia-telemetry features a **dramatically simplified API** with only **8 core exports**:
+pharia-telemetry features a **clean, focused API** designed for ease of use:
 
 ```python
 from pharia_telemetry import (
-    # High-level convenience (90% of users)
+    # Core setup (essential)
     setup_telemetry,           # One-function setup
-    add_context_to_logs,       # Easy logging integration
-    get_current_context,       # Manual context access
 
-    # Essential utilities (advanced users)
+    # GenAI instrumentation (most users)
+    create_chat_span,          # Smart sync/async chat spans
+    create_embeddings_span,    # Smart sync/async embeddings spans
+    create_tool_execution_span,# Smart sync/async tool spans
+    set_genai_span_usage,      # Token usage tracking
+    set_genai_span_response,   # Response metadata
+
+    # Context propagation (advanced)
     set_baggage_item,          # Set context for propagation
     get_baggage_item,          # Get propagated context
-    create_context_injector,   # Custom logging integration
 
-    # Namespaced constants
-    constants,                 # Access via constants.Baggage.USER_ID
+    # Logging integration (optional)
+    create_context_injector,   # Custom logging integration
 )
 ```
 
@@ -135,10 +139,10 @@ Choose your path based on what you need:
 - **🔬 OpenTelemetry Integration**: Minimal setup utilities for distributed tracing
 - **🧳 Baggage Management**: Context propagation across service boundaries
 - **📊 Structured Logging**: Automatic trace correlation for log records
-- **🤖 GenAI Semantic Conventions**: Built-in support for AI operation tracing
+- **🤖 Smart GenAI Spans**: Auto-detecting sync/async convenience functions for AI operations
 - **🔧 Production Ready**: Graceful degradation when OpenTelemetry is unavailable
 - **📈 Pharia Standards**: Standardized constants and conventions across all services
-- **🎯 Minimal API**: Only 8 core exports for 90% of use cases
+- **🎯 Focused API**: Clean, intuitive functions for common use cases
 
 ## 🏛️ Architecture
 
@@ -182,13 +186,22 @@ structlog.configure(processors=[
 
 ### GenAI Operations
 ```python
+from pharia_telemetry import create_chat_span, create_embeddings_span
 from pharia_telemetry.sem_conv.gen_ai import GenAI
-from pharia_telemetry.baggage import set_gen_ai_span_attributes
 
-set_gen_ai_span_attributes(
-    operation_name=GenAI.Values.OperationName.CHAT,
-    agent_id=GenAI.Values.AgentId.QA_CHAT,
-)
+# Smart convenience functions that auto-detect sync/async context
+with create_chat_span(
+    model="llama-3.1-8B",
+    agent_id=GenAI.Values.PhariaAgentId.QA_CHAT,
+    conversation_id="conv-123"
+) as span:
+    # Works in both sync and async contexts
+    pass
+
+# Also works seamlessly in async contexts
+async with create_embeddings_span(model="text-embedding-3-small") as span:
+    # Automatic context detection
+    pass
 ```
 
 ### Clean Constants Structure
