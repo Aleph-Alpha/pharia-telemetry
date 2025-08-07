@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pharia_telemetry.gen_ai import (
+from pharia_telemetry.sem_conv.gen_ai import (
     DataContext,
     GenAI,
     _build_span_name_and_attributes,
@@ -108,9 +108,9 @@ class TestSharedLogic:
 class TestSmartSpanSelection:
     """Test smart span selection based on context (default behavior)."""
 
-    @patch("pharia_telemetry.gen_ai._is_async_context")
-    @patch("pharia_telemetry.gen_ai.create_genai_span_sync")
-    @patch("pharia_telemetry.gen_ai.create_genai_span_async")
+    @patch("pharia_telemetry.sem_conv.gen_ai._is_async_context")
+    @patch("pharia_telemetry.sem_conv.gen_ai.create_genai_span_sync")
+    @patch("pharia_telemetry.sem_conv.gen_ai.create_genai_span_async")
     def test_create_genai_span_sync_context(
         self, mock_async_span, mock_sync_span, mock_is_async
     ):
@@ -133,9 +133,9 @@ class TestSmartSpanSelection:
         )
         mock_async_span.assert_not_called()
 
-    @patch("pharia_telemetry.gen_ai._is_async_context")
-    @patch("pharia_telemetry.gen_ai.create_genai_span_sync")
-    @patch("pharia_telemetry.gen_ai.create_genai_span_async")
+    @patch("pharia_telemetry.sem_conv.gen_ai._is_async_context")
+    @patch("pharia_telemetry.sem_conv.gen_ai.create_genai_span_sync")
+    @patch("pharia_telemetry.sem_conv.gen_ai.create_genai_span_async")
     def test_create_genai_span_async_context(
         self, mock_async_span, mock_sync_span, mock_is_async
     ):
@@ -158,7 +158,7 @@ class TestSmartSpanSelection:
         )
         mock_sync_span.assert_not_called()
 
-    @patch("pharia_telemetry.gen_ai.create_genai_span")
+    @patch("pharia_telemetry.sem_conv.gen_ai.create_genai_span")
     def test_create_chat_span_delegates_to_smart_default(self, mock_create_genai_span):
         """Test that create_chat_span delegates to smart default create_genai_span."""
         mock_create_genai_span.return_value = MagicMock()
@@ -181,7 +181,7 @@ class TestSmartSpanSelection:
 class TestIntegration:
     """Integration tests for smart span functionality."""
 
-    @patch("pharia_telemetry.gen_ai.get_tracer")
+    @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
     def test_smart_span_sync_integration(self, mock_get_tracer):
         """Test smart span (default create_chat_span) in actual sync context."""
         # Mock tracer and span
@@ -204,7 +204,7 @@ class TestIntegration:
         call_args = mock_tracer.start_as_current_span.call_args
         assert call_args[0][0] == "chat gpt-4"  # span name
 
-    @patch("pharia_telemetry.gen_ai.get_tracer")
+    @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
     @pytest.mark.asyncio
     async def test_smart_span_async_integration(self, mock_get_tracer):
         """Test smart span (default create_chat_span) in actual async context."""
@@ -238,8 +238,12 @@ class TestSmartLogicComprehensive:
         # actually detects it's sync and behaves appropriately
 
         # Mock the detection to ensure we're testing the right path
-        with patch("pharia_telemetry.gen_ai._is_async_context") as mock_is_async:
-            with patch("pharia_telemetry.gen_ai.create_genai_span_sync") as mock_sync:
+        with patch(
+            "pharia_telemetry.sem_conv.gen_ai._is_async_context"
+        ) as mock_is_async:
+            with patch(
+                "pharia_telemetry.sem_conv.gen_ai.create_genai_span_sync"
+            ) as mock_sync:
                 mock_is_async.return_value = False
                 mock_sync.return_value = MagicMock()
 
@@ -257,8 +261,12 @@ class TestSmartLogicComprehensive:
         # actually detects it's async and behaves appropriately
 
         # Mock the async function to ensure we're testing the right path
-        with patch("pharia_telemetry.gen_ai._is_async_context") as mock_is_async:
-            with patch("pharia_telemetry.gen_ai.create_genai_span_async") as mock_async:
+        with patch(
+            "pharia_telemetry.sem_conv.gen_ai._is_async_context"
+        ) as mock_is_async:
+            with patch(
+                "pharia_telemetry.sem_conv.gen_ai.create_genai_span_async"
+            ) as mock_async:
                 mock_is_async.return_value = True
                 mock_async.return_value = MagicMock()
 
@@ -273,7 +281,7 @@ class TestSmartLogicComprehensive:
         """Test that all convenience functions use smart detection by default."""
 
         # Mock the smart default function
-        with patch("pharia_telemetry.gen_ai.create_genai_span") as mock_smart:
+        with patch("pharia_telemetry.sem_conv.gen_ai.create_genai_span") as mock_smart:
             mock_smart.return_value = MagicMock()
 
             # Test each convenience function calls the smart default
@@ -289,8 +297,12 @@ class TestSmartLogicComprehensive:
     def test_explicit_functions_bypass_smart_logic(self):
         """Test that explicit sync/async functions bypass smart detection."""
         # Mock the smart detection function
-        with patch("pharia_telemetry.gen_ai._is_async_context") as mock_is_async:
-            with patch("pharia_telemetry.gen_ai.get_tracer") as mock_get_tracer:
+        with patch(
+            "pharia_telemetry.sem_conv.gen_ai._is_async_context"
+        ) as mock_is_async:
+            with patch(
+                "pharia_telemetry.sem_conv.gen_ai.get_tracer"
+            ) as mock_get_tracer:
                 mock_get_tracer.return_value = None  # No tracer available
 
                 # Call explicit sync function
@@ -304,8 +316,12 @@ class TestSmartLogicComprehensive:
     async def test_explicit_async_function_bypasses_smart_logic(self):
         """Test that explicit async function bypasses smart detection."""
         # Mock the smart detection function
-        with patch("pharia_telemetry.gen_ai._is_async_context") as mock_is_async:
-            with patch("pharia_telemetry.gen_ai.get_tracer") as mock_get_tracer:
+        with patch(
+            "pharia_telemetry.sem_conv.gen_ai._is_async_context"
+        ) as mock_is_async:
+            with patch(
+                "pharia_telemetry.sem_conv.gen_ai.get_tracer"
+            ) as mock_get_tracer:
                 mock_get_tracer.return_value = None  # No tracer available
 
                 # Call explicit async function
@@ -320,8 +336,12 @@ class TestSmartLogicComprehensive:
         data_context = DataContext(collections=["test"], indexes=["idx"])
         additional_attrs = {"custom": "value"}
 
-        with patch("pharia_telemetry.gen_ai._is_async_context") as mock_is_async:
-            with patch("pharia_telemetry.gen_ai.create_genai_span_sync") as mock_sync:
+        with patch(
+            "pharia_telemetry.sem_conv.gen_ai._is_async_context"
+        ) as mock_is_async:
+            with patch(
+                "pharia_telemetry.sem_conv.gen_ai.create_genai_span_sync"
+            ) as mock_sync:
                 mock_is_async.return_value = False
                 mock_sync.return_value = MagicMock()
 
@@ -353,8 +373,12 @@ class TestSmartLogicComprehensive:
 
     def test_legacy_smart_functions_work(self):
         """Test that the default smart functions work correctly."""
-        with patch("pharia_telemetry.gen_ai.create_genai_span_sync") as mock_sync:
-            with patch("pharia_telemetry.gen_ai._is_async_context") as mock_is_async:
+        with patch(
+            "pharia_telemetry.sem_conv.gen_ai.create_genai_span_sync"
+        ) as mock_sync:
+            with patch(
+                "pharia_telemetry.sem_conv.gen_ai._is_async_context"
+            ) as mock_is_async:
                 mock_is_async.return_value = False
                 mock_sync.return_value = MagicMock()
 
@@ -381,8 +405,12 @@ class TestSmartLogicComprehensive:
         import time
 
         # Mock functions to avoid actual span creation
-        with patch("pharia_telemetry.gen_ai.create_genai_span_sync") as mock_sync:
-            with patch("pharia_telemetry.gen_ai.create_genai_span_async") as mock_async:
+        with patch(
+            "pharia_telemetry.sem_conv.gen_ai.create_genai_span_sync"
+        ) as mock_sync:
+            with patch(
+                "pharia_telemetry.sem_conv.gen_ai.create_genai_span_async"
+            ) as mock_async:
                 mock_sync.return_value = MagicMock()
                 mock_async.return_value = MagicMock()
 

@@ -38,7 +38,7 @@
 ## [Unreleased]
 
 ### Added
-- GenAI constants now exposed directly from `pharia_telemetry.gen_ai` module for improved API convenience
+- GenAI constants now exposed directly from `pharia_telemetry.sem_conv.gen_ai` module for improved API convenience
 - Comprehensive pre-commit hooks with mypy type checking
 - Support for alpha pre-releases in release workflow
 

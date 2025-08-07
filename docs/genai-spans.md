@@ -353,7 +353,7 @@ See [examples/comprehensive_genai_example.py](../examples/comprehensive_genai_ex
 
 ## Module Information
 
-The GenAI functionality is provided by the `pharia_telemetry.gen_ai` module, but all functions are re-exported through the main `pharia_telemetry` package for convenience.
+The GenAI functionality is provided by the `pharia_telemetry.sem_conv.gen_ai` module, but all functions are re-exported through the main `pharia_telemetry` package for convenience.
 
 ## Legacy Function Migration
 

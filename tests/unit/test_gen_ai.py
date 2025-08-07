@@ -9,6 +9,12 @@ from pharia_telemetry.sem_conv.gen_ai import (
     set_genai_span_usage,
 )
 
+# Import additional components for test assertions
+try:
+    from opentelemetry.trace import NonRecordingSpan
+except ImportError:
+    NonRecordingSpan = None
+
 # Import SpanKind for test assertions
 try:
     from opentelemetry.trace import SpanKind
@@ -135,7 +141,8 @@ class TestCreateGenAISpan:
             agent_name="Test Agent",
             model="gpt-4",
         ) as span:
-            assert span is None
+            # Should return a NonRecordingSpan when no OTEL available
+            assert isinstance(span, NonRecordingSpan)
 
     @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
     @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
@@ -148,7 +155,8 @@ class TestCreateGenAISpan:
             agent_name="Test Agent",
             model="gpt-4",
         ) as span:
-            assert span is None
+            # Should return a NonRecordingSpan when no tracer available
+            assert isinstance(span, NonRecordingSpan)
 
 
 class TestSetGenAISpanUsage:
