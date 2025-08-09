@@ -4,6 +4,7 @@ Tests for smart sync/async GenAI span functionality.
 Tests the auto-detection logic and shared code functionality.
 """
 
+import asyncio
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -35,6 +36,16 @@ class TestAsyncDetection:
     async def test_is_async_context_true_in_async(self):
         """Test that _is_async_context returns True in async context."""
         assert _is_async_context() is True
+
+    def test_is_async_context_false_in_sync_even_with_loop(self):
+        """Do not misdetect sync code as async when a loop exists in the thread."""
+        loop = asyncio.new_event_loop()
+        try:
+            asyncio.set_event_loop(loop)
+            assert _is_async_context() is False
+        finally:
+            asyncio.set_event_loop(None)
+            loop.close()
 
 
 class TestSharedLogic:
