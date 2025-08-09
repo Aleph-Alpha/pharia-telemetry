@@ -4,6 +4,12 @@ GenAI convenience functions for OpenTelemetry semantic conventions.
 This module provides simple, clean functions for creating GenAI spans following
 OpenTelemetry semantic conventions. Provides convenience functions with sensible defaults.
 
+TYPE SAFETY: Functions like `create_genai_span()` use runtime detection to return either sync
+or async context managers. While functional, this can cause type checking issues. For better
+type safety, use the explicit sync/async versions:
+- Use `create_genai_span_sync()` in synchronous contexts
+- Use `create_genai_span_async()` in asynchronous contexts
+
 Example usage:
     ```python
     from pharia_telemetry.sem_conv.gen_ai import create_chat_span, DataContext, GenAI
@@ -50,6 +56,7 @@ from typing import (
     Optional,
     TypeVar,
     Union,
+    overload,
 )
 
 from opentelemetry.trace import NonRecordingSpan, Span, SpanKind
@@ -539,6 +546,36 @@ async def create_genai_span_async(
         yield span
 
 
+@overload
+def create_genai_span(
+    operation_name: str,
+    *,
+    agent_id: Optional[str] = None,
+    agent_name: Optional[str] = None,
+    model: Optional[str] = None,
+    conversation_id: Optional[str] = None,
+    tool_name: Optional[str] = None,
+    data_context: Optional[DataContext] = None,
+    span_kind: Optional[SpanKind] = None,
+    additional_attributes: Optional[Dict[str, Any]] = None,
+) -> ContextManager[Span]: ...
+
+
+@overload
+def create_genai_span(
+    operation_name: str,
+    *,
+    agent_id: Optional[str] = None,
+    agent_name: Optional[str] = None,
+    model: Optional[str] = None,
+    conversation_id: Optional[str] = None,
+    tool_name: Optional[str] = None,
+    data_context: Optional[DataContext] = None,
+    span_kind: Optional[SpanKind] = None,
+    additional_attributes: Optional[Dict[str, Any]] = None,
+) -> AsyncContextManager[Span]: ...
+
+
 def create_genai_span(
     operation_name: str,
     *,
@@ -557,6 +594,12 @@ def create_genai_span(
     This is the default GenAI span creation function. It automatically detects whether
     it's being called from a synchronous or asynchronous context and returns the
     appropriate context manager.
+
+    **Type Safety Note**: While this function provides automatic context detection,
+    type checkers may have difficulty with the Union return type. For better type safety,
+    consider using the explicit sync/async versions:
+    - `create_genai_span_sync()` for synchronous contexts
+    - `create_genai_span_async()` for asynchronous contexts
 
     Args:
         operation_name: The type of GenAI operation (use GenAI.Values.OperationName constants)
@@ -592,6 +635,14 @@ def create_genai_span(
             response = await call_ai_model_async()
             span.set_attribute("gen_ai.usage.input_tokens", response.usage.prompt_tokens)
         ```
+
+        ```python
+        # For better type safety, use explicit versions:
+        with create_genai_span_sync(...) as span:  # Always returns ContextManager
+            pass
+        async with create_genai_span_async(...) as span:  # Always returns AsyncContextManager
+            pass
+        ```
     """
     # Detect if we're in an async context
     if _is_async_context():
@@ -623,6 +674,30 @@ def create_genai_span(
 # =============================================================================
 # Convenience Functions
 # =============================================================================
+
+
+@overload
+def create_chat_span(
+    *,
+    agent_id: str = GenAI.Values.PhariaAgentId.QA_CHAT,
+    agent_name: Optional[str] = None,
+    model: Optional[str] = None,
+    conversation_id: Optional[str] = None,
+    data_context: Optional[DataContext] = None,
+    additional_attributes: Optional[Dict[str, Any]] = None,
+) -> ContextManager[Span]: ...
+
+
+@overload
+def create_chat_span(
+    *,
+    agent_id: str = GenAI.Values.PhariaAgentId.QA_CHAT,
+    agent_name: Optional[str] = None,
+    model: Optional[str] = None,
+    conversation_id: Optional[str] = None,
+    data_context: Optional[DataContext] = None,
+    additional_attributes: Optional[Dict[str, Any]] = None,
+) -> AsyncContextManager[Span]: ...
 
 
 def create_chat_span(
@@ -672,6 +747,24 @@ def create_chat_span(
     )
 
 
+@overload
+def create_embeddings_span(
+    *,
+    model: Optional[str] = None,
+    data_context: Optional[DataContext] = None,
+    additional_attributes: Optional[Dict[str, Any]] = None,
+) -> ContextManager[Span]: ...
+
+
+@overload
+def create_embeddings_span(
+    *,
+    model: Optional[str] = None,
+    data_context: Optional[DataContext] = None,
+    additional_attributes: Optional[Dict[str, Any]] = None,
+) -> AsyncContextManager[Span]: ...
+
+
 def create_embeddings_span(
     *,
     model: Optional[str] = None,
@@ -708,6 +801,28 @@ def create_embeddings_span(
         data_context=data_context,
         additional_attributes=additional_attributes,
     )
+
+
+@overload
+def create_tool_execution_span(
+    tool_name: str,
+    *,
+    agent_id: str = GenAI.Values.PhariaAgentId.QA_CHAT,
+    conversation_id: Optional[str] = None,
+    data_context: Optional[DataContext] = None,
+    additional_attributes: Optional[Dict[str, Any]] = None,
+) -> ContextManager[Span]: ...
+
+
+@overload
+def create_tool_execution_span(
+    tool_name: str,
+    *,
+    agent_id: str = GenAI.Values.PhariaAgentId.QA_CHAT,
+    conversation_id: Optional[str] = None,
+    data_context: Optional[DataContext] = None,
+    additional_attributes: Optional[Dict[str, Any]] = None,
+) -> AsyncContextManager[Span]: ...
 
 
 def create_tool_execution_span(
@@ -754,6 +869,28 @@ def create_tool_execution_span(
     )
 
 
+@overload
+def create_agent_creation_span(
+    *,
+    agent_id: Optional[str] = None,
+    agent_name: Optional[str] = None,
+    conversation_id: Optional[str] = None,
+    data_context: Optional[DataContext] = None,
+    additional_attributes: Optional[Dict[str, Any]] = None,
+) -> ContextManager[Span]: ...
+
+
+@overload
+def create_agent_creation_span(
+    *,
+    agent_id: Optional[str] = None,
+    agent_name: Optional[str] = None,
+    conversation_id: Optional[str] = None,
+    data_context: Optional[DataContext] = None,
+    additional_attributes: Optional[Dict[str, Any]] = None,
+) -> AsyncContextManager[Span]: ...
+
+
 def create_agent_creation_span(
     *,
     agent_id: Optional[str] = None,
@@ -795,6 +932,30 @@ def create_agent_creation_span(
         data_context=data_context,
         additional_attributes=additional_attributes,
     )
+
+
+@overload
+def create_agent_invocation_span(
+    *,
+    agent_id: str = GenAI.Values.PhariaAgentId.AGENTIC_CHAT,
+    agent_name: Optional[str] = None,
+    model: Optional[str] = None,
+    conversation_id: Optional[str] = None,
+    data_context: Optional[DataContext] = None,
+    additional_attributes: Optional[Dict[str, Any]] = None,
+) -> ContextManager[Span]: ...
+
+
+@overload
+def create_agent_invocation_span(
+    *,
+    agent_id: str = GenAI.Values.PhariaAgentId.AGENTIC_CHAT,
+    agent_name: Optional[str] = None,
+    model: Optional[str] = None,
+    conversation_id: Optional[str] = None,
+    data_context: Optional[DataContext] = None,
+    additional_attributes: Optional[Dict[str, Any]] = None,
+) -> AsyncContextManager[Span]: ...
 
 
 def create_agent_invocation_span(
