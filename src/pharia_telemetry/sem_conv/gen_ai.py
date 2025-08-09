@@ -988,7 +988,7 @@ def create_agent_invocation_span_sync(
 # =============================================================================
 
 
-def acreate_chat_span(
+def create_chat_span_async(
     *,
     agent_id: str = GenAI.Values.PhariaAgentId.QA_CHAT,
     agent_name: str | None = None,
@@ -1013,7 +1013,7 @@ def acreate_chat_span(
 
     Example:
         ```python
-        async with acreate_chat_span(
+        async with create_chat_span_async(
             conversation_id="conv-123",
             model="gpt-4",
             data_context=DataContext(collections=["knowledge_base"])
@@ -1034,7 +1034,7 @@ def acreate_chat_span(
     )
 
 
-def acreate_embeddings_span(
+def create_embeddings_span_async(
     *,
     model: str | None = None,
     data_context: DataContext | None = None,
@@ -1053,7 +1053,7 @@ def acreate_embeddings_span(
 
     Example:
         ```python
-        async with acreate_embeddings_span(
+        async with create_embeddings_span_async(
             model="luminous-embed",
             data_context=DataContext(collections=["documents"], indexes=["vector_index"])
         ) as span:
@@ -1071,7 +1071,7 @@ def acreate_embeddings_span(
     )
 
 
-def acreate_tool_execution_span(
+def create_tool_execution_span_async(
     tool_name: str,
     *,
     agent_id: str = GenAI.Values.PhariaAgentId.QA_CHAT,
@@ -1094,7 +1094,7 @@ def acreate_tool_execution_span(
 
     Example:
         ```python
-        async with acreate_tool_execution_span(
+        async with create_tool_execution_span_async(
             "web_search",
             conversation_id="conv-123",
             data_context=DataContext(collections=["web_results"], namespaces=["search"])
@@ -1114,7 +1114,7 @@ def acreate_tool_execution_span(
     )
 
 
-def acreate_agent_creation_span(
+def create_agent_creation_span_async(
     *,
     agent_id: str | None = None,
     agent_name: str | None = None,
@@ -1137,7 +1137,7 @@ def acreate_agent_creation_span(
 
     Example:
         ```python
-        async with acreate_agent_creation_span(
+        async with create_agent_creation_span_async(
             agent_name="Customer Support Agent",
             agent_id="new_agent_123"
         ) as span:
@@ -1156,7 +1156,7 @@ def acreate_agent_creation_span(
     )
 
 
-def acreate_agent_invocation_span(
+def create_agent_invocation_span_async(
     *,
     agent_id: str = GenAI.Values.PhariaAgentId.AGENTIC_CHAT,
     agent_name: str | None = None,
@@ -1181,7 +1181,7 @@ def acreate_agent_invocation_span(
 
     Example:
         ```python
-        async with acreate_agent_invocation_span(
+        async with create_agent_invocation_span_async(
             agent_name="QA Assistant",
             model="luminous-supreme",
             conversation_id="conv-123"
@@ -1472,11 +1472,11 @@ __all__ = [
     "create_agent_creation_span_sync",
     "create_agent_invocation_span_sync",
     # Async convenience span functions (explicit async)
-    "acreate_chat_span",
-    "acreate_embeddings_span",
-    "acreate_tool_execution_span",
-    "acreate_agent_creation_span",
-    "acreate_agent_invocation_span",
+    "create_chat_span_async",
+    "create_embeddings_span_async",
+    "create_tool_execution_span_async",
+    "create_agent_creation_span_async",
+    "create_agent_invocation_span_async",
     # Decorators
     "genai_span",
     "agenai_span",
