@@ -155,17 +155,16 @@ class DataContext:
 
 def _is_async_context() -> bool:
     """
-    Detect if we're running in an async context.
+    Detect whether we are executing inside an actual asyncio Task.
 
-    Returns:
-        bool: True if running in an async context, False otherwise
+    This is intentionally conservative: some environments (e.g., pytest with
+    asyncio strict mode) may have a running loop in the thread even when the
+    current call site is synchronous. We therefore only treat the context as
+    async when a current Task exists.
     """
     try:
-        # Try to get the current event loop
-        loop = asyncio.get_running_loop()
-        return loop is not None
+        return asyncio.current_task() is not None
     except RuntimeError:
-        # No event loop running
         return False
 
 

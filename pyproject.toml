@@ -159,6 +159,11 @@ select = [
 ]
 ignore = [
     "E501",  # line too long, handled by black
+    # Temporarily ignore pyupgrade suggestions to avoid mass refactor
+    "UP006", # use builtins (dict, list, etc.)
+    "UP007", # use | for Union
+    "UP035", # typing.Tuple deprecated
+    "UP045", # X | None instead of Optional[X]
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -187,10 +192,17 @@ disallow_untyped_decorators = true
 no_implicit_optional = true
 no_implicit_reexport = true
 strict_equality = true
+# Enhanced async checking
+warn_no_await = true
+# Stricter checking for context managers
+warn_unused_awaitable = true
 
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
+# Still check async context manager usage in tests
+warn_no_await = true
+warn_unused_awaitable = true
 
 # Flake8 configuration (in setup.cfg or .flake8 if needed)
