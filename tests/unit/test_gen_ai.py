@@ -7,24 +7,24 @@ import pytest
 from pharia_telemetry.sem_conv.gen_ai import (
     DataContext,
     GenAI,
-    acreate_agent_creation_span,
-    acreate_agent_invocation_span,
-    # Async convenience functions
-    acreate_chat_span,
-    acreate_embeddings_span,
-    acreate_tool_execution_span,
     create_agent_creation_span,
+    create_agent_creation_span_async,
     create_agent_creation_span_sync,
     create_agent_invocation_span,
+    create_agent_invocation_span_async,
     create_agent_invocation_span_sync,
     # Smart convenience functions
     create_chat_span,
+    # Async convenience functions
+    create_chat_span_async,
     # Sync convenience functions
     create_chat_span_sync,
     create_embeddings_span,
+    create_embeddings_span_async,
     create_embeddings_span_sync,
     create_genai_span,
     create_tool_execution_span,
+    create_tool_execution_span_async,
     create_tool_execution_span_sync,
     # Span attribute setters
     set_genai_span_response,
@@ -544,7 +544,7 @@ class TestAsyncConvenienceSpans:
     @pytest.mark.asyncio
     @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
     @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
-    async def test_acreate_chat_span(self, mock_get_tracer):
+    async def test_create_chat_span_async(self, mock_get_tracer):
         mock_span = Mock()
         mock_tracer = Mock()
         ctx = MagicMock()
@@ -553,7 +553,7 @@ class TestAsyncConvenienceSpans:
         mock_tracer.start_as_current_span.return_value = ctx
         mock_get_tracer.return_value = mock_tracer
 
-        async with acreate_chat_span(model="gpt-4", conversation_id="c-3"):
+        async with create_chat_span_async(model="gpt-4", conversation_id="c-3"):
             pass
 
         name = mock_tracer.start_as_current_span.call_args[0][0]
@@ -566,7 +566,7 @@ class TestAsyncConvenienceSpans:
     @pytest.mark.asyncio
     @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
     @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
-    async def test_acreate_embeddings_span(self, mock_get_tracer):
+    async def test_create_embeddings_span_async(self, mock_get_tracer):
         mock_span = Mock()
         mock_tracer = Mock()
         ctx = MagicMock()
@@ -575,7 +575,7 @@ class TestAsyncConvenienceSpans:
         mock_tracer.start_as_current_span.return_value = ctx
         mock_get_tracer.return_value = mock_tracer
 
-        async with acreate_embeddings_span(model="embed-3"):
+        async with create_embeddings_span_async(model="embed-3"):
             pass
 
         name = mock_tracer.start_as_current_span.call_args[0][0]
@@ -588,7 +588,7 @@ class TestAsyncConvenienceSpans:
     @pytest.mark.asyncio
     @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
     @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
-    async def test_acreate_tool_execution_span(self, mock_get_tracer):
+    async def test_create_tool_execution_span_async(self, mock_get_tracer):
         mock_span = Mock()
         mock_tracer = Mock()
         ctx = MagicMock()
@@ -597,7 +597,7 @@ class TestAsyncConvenienceSpans:
         mock_tracer.start_as_current_span.return_value = ctx
         mock_get_tracer.return_value = mock_tracer
 
-        async with acreate_tool_execution_span("calc", conversation_id="conv-4"):
+        async with create_tool_execution_span_async("calc", conversation_id="conv-4"):
             pass
 
         name = mock_tracer.start_as_current_span.call_args[0][0]
@@ -611,7 +611,7 @@ class TestAsyncConvenienceSpans:
     @pytest.mark.asyncio
     @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
     @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
-    async def test_acreate_agent_creation_span(self, mock_get_tracer):
+    async def test_create_agent_creation_span_async(self, mock_get_tracer):
         mock_span = Mock()
         mock_tracer = Mock()
         ctx = MagicMock()
@@ -620,7 +620,9 @@ class TestAsyncConvenienceSpans:
         mock_tracer.start_as_current_span.return_value = ctx
         mock_get_tracer.return_value = mock_tracer
 
-        async with acreate_agent_creation_span(agent_name="Creator", agent_id="id-2"):
+        async with create_agent_creation_span_async(
+            agent_name="Creator", agent_id="id-2"
+        ):
             pass
 
         name = mock_tracer.start_as_current_span.call_args[0][0]
@@ -634,7 +636,7 @@ class TestAsyncConvenienceSpans:
     @pytest.mark.asyncio
     @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
     @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
-    async def test_acreate_agent_invocation_span(self, mock_get_tracer):
+    async def test_create_agent_invocation_span_async(self, mock_get_tracer):
         mock_span = Mock()
         mock_tracer = Mock()
         ctx = MagicMock()
@@ -643,7 +645,7 @@ class TestAsyncConvenienceSpans:
         mock_tracer.start_as_current_span.return_value = ctx
         mock_get_tracer.return_value = mock_tracer
 
-        async with acreate_agent_invocation_span(agent_name="Runner", model="m-3"):
+        async with create_agent_invocation_span_async(agent_name="Runner", model="m-3"):
             pass
 
         name = mock_tracer.start_as_current_span.call_args[0][0]
