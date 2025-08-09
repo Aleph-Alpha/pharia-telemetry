@@ -2,9 +2,31 @@
 
 from unittest.mock import MagicMock, Mock, patch
 
+import pytest
+
 from pharia_telemetry.sem_conv.gen_ai import (
+    DataContext,
     GenAI,
+    acreate_agent_creation_span,
+    acreate_agent_invocation_span,
+    # Async convenience functions
+    acreate_chat_span,
+    acreate_embeddings_span,
+    acreate_tool_execution_span,
+    create_agent_creation_span,
+    create_agent_creation_span_sync,
+    create_agent_invocation_span,
+    create_agent_invocation_span_sync,
+    # Smart convenience functions
+    create_chat_span,
+    # Sync convenience functions
+    create_chat_span_sync,
+    create_embeddings_span,
+    create_embeddings_span_sync,
     create_genai_span,
+    create_tool_execution_span,
+    create_tool_execution_span_sync,
+    # Span attribute setters
     set_genai_span_response,
     set_genai_span_usage,
 )
@@ -285,6 +307,352 @@ class TestSetGenAISpanResponse:
         """Test setting response when OpenTelemetry is not available."""
         # Should not raise an exception
         set_genai_span_response(response_id="resp_123")
+
+
+class TestSmartConvenienceSpans:
+    """Tests for smart (auto sync/async) convenience functions."""
+
+    @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
+    @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
+    def test_create_chat_span_smart(self, mock_get_tracer):
+        mock_span = Mock()
+        mock_tracer = Mock()
+        ctx = MagicMock()
+        ctx.__enter__.return_value = mock_span
+        ctx.__exit__.return_value = None
+        mock_tracer.start_as_current_span.return_value = ctx
+        mock_get_tracer.return_value = mock_tracer
+
+        dc = DataContext(collections=["kb"])
+        with create_chat_span(model="gpt-4", conversation_id="c-1", data_context=dc):
+            pass
+
+        call = mock_tracer.start_as_current_span.call_args
+        name, kwargs = call[0][0], call[1]
+        attrs = kwargs["attributes"]
+        assert name == "chat gpt-4"
+        assert attrs[GenAI.OPERATION_NAME] == "chat"
+        assert attrs[GenAI.REQUEST_MODEL] == "gpt-4"
+        assert attrs[GenAI.CONVERSATION_ID] == "c-1"
+        assert attrs["pharia.data.collections"] == ["kb"]
+
+    @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
+    @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
+    def test_create_embeddings_span_smart(self, mock_get_tracer):
+        mock_span = Mock()
+        mock_tracer = Mock()
+        ctx = MagicMock()
+        ctx.__enter__.return_value = mock_span
+        ctx.__exit__.return_value = None
+        mock_tracer.start_as_current_span.return_value = ctx
+        mock_get_tracer.return_value = mock_tracer
+
+        with create_embeddings_span(model="embed-1"):
+            pass
+
+        name = mock_tracer.start_as_current_span.call_args[0][0]
+        kwargs = mock_tracer.start_as_current_span.call_args[1]
+        attrs = kwargs["attributes"]
+        assert name == "embeddings embed-1"
+        assert attrs[GenAI.OPERATION_NAME] == "embeddings"
+        assert attrs[GenAI.REQUEST_MODEL] == "embed-1"
+        assert attrs[GenAI.AGENT_NAME] == "embeddings_agent"
+
+    @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
+    @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
+    def test_create_tool_execution_span_smart(self, mock_get_tracer):
+        mock_span = Mock()
+        mock_tracer = Mock()
+        ctx = MagicMock()
+        ctx.__enter__.return_value = mock_span
+        ctx.__exit__.return_value = None
+        mock_tracer.start_as_current_span.return_value = ctx
+        mock_get_tracer.return_value = mock_tracer
+
+        with create_tool_execution_span("search", conversation_id="conv"):
+            pass
+
+        name = mock_tracer.start_as_current_span.call_args[0][0]
+        kwargs = mock_tracer.start_as_current_span.call_args[1]
+        attrs = kwargs["attributes"]
+        assert name == "execute_tool search"
+        assert attrs[GenAI.OPERATION_NAME] == "execute_tool"
+        assert attrs[GenAI.TOOL_NAME] == "search"
+        assert attrs[GenAI.CONVERSATION_ID] == "conv"
+
+    @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
+    @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
+    def test_create_agent_creation_span_smart(self, mock_get_tracer):
+        mock_span = Mock()
+        mock_tracer = Mock()
+        ctx = MagicMock()
+        ctx.__enter__.return_value = mock_span
+        ctx.__exit__.return_value = None
+        mock_tracer.start_as_current_span.return_value = ctx
+        mock_get_tracer.return_value = mock_tracer
+
+        with create_agent_creation_span(agent_name="AgentX", agent_id="aid"):
+            pass
+
+        name = mock_tracer.start_as_current_span.call_args[0][0]
+        kwargs = mock_tracer.start_as_current_span.call_args[1]
+        attrs = kwargs["attributes"]
+        assert name == "create_agent AgentX"
+        assert attrs[GenAI.OPERATION_NAME] == "create_agent"
+        assert attrs[GenAI.AGENT_NAME] == "AgentX"
+        assert attrs[GenAI.AGENT_ID] == "aid"
+
+    @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
+    @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
+    def test_create_agent_invocation_span_smart(self, mock_get_tracer):
+        mock_span = Mock()
+        mock_tracer = Mock()
+        ctx = MagicMock()
+        ctx.__enter__.return_value = mock_span
+        ctx.__exit__.return_value = None
+        mock_tracer.start_as_current_span.return_value = ctx
+        mock_get_tracer.return_value = mock_tracer
+
+        with create_agent_invocation_span(agent_name="QA Assistant", model="m-1"):
+            pass
+
+        name = mock_tracer.start_as_current_span.call_args[0][0]
+        kwargs = mock_tracer.start_as_current_span.call_args[1]
+        attrs = kwargs["attributes"]
+        assert name == "invoke_agent QA Assistant"
+        assert attrs[GenAI.OPERATION_NAME] == "invoke_agent"
+        assert attrs[GenAI.AGENT_NAME] == "QA Assistant"
+        assert attrs[GenAI.REQUEST_MODEL] == "m-1"
+
+
+class TestSyncConvenienceSpans:
+    """Tests for explicit sync convenience functions (mypy-safe)."""
+
+    @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
+    @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
+    def test_create_chat_span_sync(self, mock_get_tracer):
+        mock_span = Mock()
+        mock_tracer = Mock()
+        ctx = MagicMock()
+        ctx.__enter__.return_value = mock_span
+        ctx.__exit__.return_value = None
+        mock_tracer.start_as_current_span.return_value = ctx
+        mock_get_tracer.return_value = mock_tracer
+
+        with create_chat_span_sync(model="gpt-4"):
+            pass
+
+        name = mock_tracer.start_as_current_span.call_args[0][0]
+        kwargs = mock_tracer.start_as_current_span.call_args[1]
+        attrs = kwargs["attributes"]
+        assert name == "chat gpt-4"
+        assert attrs[GenAI.OPERATION_NAME] == "chat"
+        assert attrs[GenAI.REQUEST_MODEL] == "gpt-4"
+
+    @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
+    @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
+    def test_create_embeddings_span_sync(self, mock_get_tracer):
+        mock_span = Mock()
+        mock_tracer = Mock()
+        ctx = MagicMock()
+        ctx.__enter__.return_value = mock_span
+        ctx.__exit__.return_value = None
+        mock_tracer.start_as_current_span.return_value = ctx
+        mock_get_tracer.return_value = mock_tracer
+
+        with create_embeddings_span_sync(model="embed-2"):
+            pass
+
+        name = mock_tracer.start_as_current_span.call_args[0][0]
+        kwargs = mock_tracer.start_as_current_span.call_args[1]
+        attrs = kwargs["attributes"]
+        assert name == "embeddings embed-2"
+        assert attrs[GenAI.OPERATION_NAME] == "embeddings"
+        assert attrs[GenAI.REQUEST_MODEL] == "embed-2"
+        assert attrs[GenAI.AGENT_NAME] == "embeddings_agent"
+
+    @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
+    @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
+    def test_create_tool_execution_span_sync(self, mock_get_tracer):
+        mock_span = Mock()
+        mock_tracer = Mock()
+        ctx = MagicMock()
+        ctx.__enter__.return_value = mock_span
+        ctx.__exit__.return_value = None
+        mock_tracer.start_as_current_span.return_value = ctx
+        mock_get_tracer.return_value = mock_tracer
+
+        with create_tool_execution_span_sync("web_search", conversation_id="c-2"):
+            pass
+
+        name = mock_tracer.start_as_current_span.call_args[0][0]
+        kwargs = mock_tracer.start_as_current_span.call_args[1]
+        attrs = kwargs["attributes"]
+        assert name == "execute_tool web_search"
+        assert attrs[GenAI.OPERATION_NAME] == "execute_tool"
+        assert attrs[GenAI.TOOL_NAME] == "web_search"
+        assert attrs[GenAI.CONVERSATION_ID] == "c-2"
+
+    @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
+    @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
+    def test_create_agent_creation_span_sync(self, mock_get_tracer):
+        mock_span = Mock()
+        mock_tracer = Mock()
+        ctx = MagicMock()
+        ctx.__enter__.return_value = mock_span
+        ctx.__exit__.return_value = None
+        mock_tracer.start_as_current_span.return_value = ctx
+        mock_get_tracer.return_value = mock_tracer
+
+        with create_agent_creation_span_sync(agent_name="Builder", agent_id="id-1"):
+            pass
+
+        name = mock_tracer.start_as_current_span.call_args[0][0]
+        kwargs = mock_tracer.start_as_current_span.call_args[1]
+        attrs = kwargs["attributes"]
+        assert name == "create_agent Builder"
+        assert attrs[GenAI.OPERATION_NAME] == "create_agent"
+        assert attrs[GenAI.AGENT_NAME] == "Builder"
+        assert attrs[GenAI.AGENT_ID] == "id-1"
+
+    @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
+    @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
+    def test_create_agent_invocation_span_sync(self, mock_get_tracer):
+        mock_span = Mock()
+        mock_tracer = Mock()
+        ctx = MagicMock()
+        ctx.__enter__.return_value = mock_span
+        ctx.__exit__.return_value = None
+        mock_tracer.start_as_current_span.return_value = ctx
+        mock_get_tracer.return_value = mock_tracer
+
+        with create_agent_invocation_span_sync(agent_name="Helper", model="m-2"):
+            pass
+
+        name = mock_tracer.start_as_current_span.call_args[0][0]
+        kwargs = mock_tracer.start_as_current_span.call_args[1]
+        attrs = kwargs["attributes"]
+        assert name == "invoke_agent Helper"
+        assert attrs[GenAI.OPERATION_NAME] == "invoke_agent"
+        assert attrs[GenAI.AGENT_NAME] == "Helper"
+        assert attrs[GenAI.REQUEST_MODEL] == "m-2"
+
+
+class TestAsyncConvenienceSpans:
+    """Tests for explicit async convenience functions."""
+
+    @pytest.mark.asyncio
+    @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
+    @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
+    async def test_acreate_chat_span(self, mock_get_tracer):
+        mock_span = Mock()
+        mock_tracer = Mock()
+        ctx = MagicMock()
+        ctx.__enter__.return_value = mock_span
+        ctx.__exit__.return_value = None
+        mock_tracer.start_as_current_span.return_value = ctx
+        mock_get_tracer.return_value = mock_tracer
+
+        async with acreate_chat_span(model="gpt-4", conversation_id="c-3"):
+            pass
+
+        name = mock_tracer.start_as_current_span.call_args[0][0]
+        kwargs = mock_tracer.start_as_current_span.call_args[1]
+        attrs = kwargs["attributes"]
+        assert name == "chat gpt-4"
+        assert attrs[GenAI.OPERATION_NAME] == "chat"
+        assert attrs[GenAI.CONVERSATION_ID] == "c-3"
+
+    @pytest.mark.asyncio
+    @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
+    @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
+    async def test_acreate_embeddings_span(self, mock_get_tracer):
+        mock_span = Mock()
+        mock_tracer = Mock()
+        ctx = MagicMock()
+        ctx.__enter__.return_value = mock_span
+        ctx.__exit__.return_value = None
+        mock_tracer.start_as_current_span.return_value = ctx
+        mock_get_tracer.return_value = mock_tracer
+
+        async with acreate_embeddings_span(model="embed-3"):
+            pass
+
+        name = mock_tracer.start_as_current_span.call_args[0][0]
+        kwargs = mock_tracer.start_as_current_span.call_args[1]
+        attrs = kwargs["attributes"]
+        assert name == "embeddings embed-3"
+        assert attrs[GenAI.OPERATION_NAME] == "embeddings"
+        assert attrs[GenAI.AGENT_NAME] == "embeddings_agent"
+
+    @pytest.mark.asyncio
+    @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
+    @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
+    async def test_acreate_tool_execution_span(self, mock_get_tracer):
+        mock_span = Mock()
+        mock_tracer = Mock()
+        ctx = MagicMock()
+        ctx.__enter__.return_value = mock_span
+        ctx.__exit__.return_value = None
+        mock_tracer.start_as_current_span.return_value = ctx
+        mock_get_tracer.return_value = mock_tracer
+
+        async with acreate_tool_execution_span("calc", conversation_id="conv-4"):
+            pass
+
+        name = mock_tracer.start_as_current_span.call_args[0][0]
+        kwargs = mock_tracer.start_as_current_span.call_args[1]
+        attrs = kwargs["attributes"]
+        assert name == "execute_tool calc"
+        assert attrs[GenAI.OPERATION_NAME] == "execute_tool"
+        assert attrs[GenAI.TOOL_NAME] == "calc"
+        assert attrs[GenAI.CONVERSATION_ID] == "conv-4"
+
+    @pytest.mark.asyncio
+    @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
+    @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
+    async def test_acreate_agent_creation_span(self, mock_get_tracer):
+        mock_span = Mock()
+        mock_tracer = Mock()
+        ctx = MagicMock()
+        ctx.__enter__.return_value = mock_span
+        ctx.__exit__.return_value = None
+        mock_tracer.start_as_current_span.return_value = ctx
+        mock_get_tracer.return_value = mock_tracer
+
+        async with acreate_agent_creation_span(agent_name="Creator", agent_id="id-2"):
+            pass
+
+        name = mock_tracer.start_as_current_span.call_args[0][0]
+        kwargs = mock_tracer.start_as_current_span.call_args[1]
+        attrs = kwargs["attributes"]
+        assert name == "create_agent Creator"
+        assert attrs[GenAI.OPERATION_NAME] == "create_agent"
+        assert attrs[GenAI.AGENT_NAME] == "Creator"
+        assert attrs[GenAI.AGENT_ID] == "id-2"
+
+    @pytest.mark.asyncio
+    @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
+    @patch("pharia_telemetry.sem_conv.gen_ai.get_tracer")
+    async def test_acreate_agent_invocation_span(self, mock_get_tracer):
+        mock_span = Mock()
+        mock_tracer = Mock()
+        ctx = MagicMock()
+        ctx.__enter__.return_value = mock_span
+        ctx.__exit__.return_value = None
+        mock_tracer.start_as_current_span.return_value = ctx
+        mock_get_tracer.return_value = mock_tracer
+
+        async with acreate_agent_invocation_span(agent_name="Runner", model="m-3"):
+            pass
+
+        name = mock_tracer.start_as_current_span.call_args[0][0]
+        kwargs = mock_tracer.start_as_current_span.call_args[1]
+        attrs = kwargs["attributes"]
+        assert name == "invoke_agent Runner"
+        assert attrs[GenAI.OPERATION_NAME] == "invoke_agent"
+        assert attrs[GenAI.AGENT_NAME] == "Runner"
+        assert attrs[GenAI.REQUEST_MODEL] == "m-3"
 
     @patch("pharia_telemetry.sem_conv.gen_ai.OTEL_AVAILABLE", True)
     @patch("opentelemetry.trace.get_current_span")
