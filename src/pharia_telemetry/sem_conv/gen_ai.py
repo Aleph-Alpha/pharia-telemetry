@@ -870,6 +870,120 @@ def create_agent_invocation_span(
 
 
 # =============================================================================
+# Sync Convenience Functions (type-safe for mypy)
+# =============================================================================
+
+
+def create_chat_span_sync(
+    *,
+    agent_id: str = GenAI.Values.PhariaAgentId.QA_CHAT,
+    agent_name: str | None = None,
+    model: str | None = None,
+    conversation_id: str | None = None,
+    data_context: DataContext | None = None,
+    additional_attributes: dict[str, Any] | None = None,
+) -> AbstractContextManager[Span]:
+    """
+    Create a chat span (sync-only) with sensible defaults.
+
+    This variant returns a non-Union sync context manager to keep static type
+    checkers (e.g., mypy) happy when used inside a normal `with` block.
+    """
+    return create_genai_span_sync(
+        operation_name=GenAI.Values.OperationName.CHAT,
+        agent_id=agent_id,
+        agent_name=agent_name,
+        model=model,
+        conversation_id=conversation_id,
+        data_context=data_context,
+        additional_attributes=additional_attributes,
+    )
+
+
+def create_embeddings_span_sync(
+    *,
+    model: str | None = None,
+    data_context: DataContext | None = None,
+    additional_attributes: dict[str, Any] | None = None,
+) -> AbstractContextManager[Span]:
+    """
+    Create an embeddings span (sync-only) with sensible defaults.
+    """
+    return create_genai_span_sync(
+        operation_name=GenAI.Values.OperationName.EMBEDDINGS,
+        agent_name="embeddings_agent",
+        model=model,
+        data_context=data_context,
+        additional_attributes=additional_attributes,
+    )
+
+
+def create_tool_execution_span_sync(
+    tool_name: str,
+    *,
+    agent_id: str = GenAI.Values.PhariaAgentId.QA_CHAT,
+    conversation_id: str | None = None,
+    data_context: DataContext | None = None,
+    additional_attributes: dict[str, Any] | None = None,
+) -> AbstractContextManager[Span]:
+    """
+    Create a tool execution span (sync-only) with sensible defaults.
+    """
+    return create_genai_span_sync(
+        operation_name=GenAI.Values.OperationName.EXECUTE_TOOL,
+        tool_name=tool_name,
+        agent_id=agent_id,
+        conversation_id=conversation_id,
+        data_context=data_context,
+        additional_attributes=additional_attributes,
+    )
+
+
+def create_agent_creation_span_sync(
+    *,
+    agent_id: str | None = None,
+    agent_name: str | None = None,
+    conversation_id: str | None = None,
+    data_context: DataContext | None = None,
+    additional_attributes: dict[str, Any] | None = None,
+) -> AbstractContextManager[Span]:
+    """
+    Create an agent creation span (sync-only) with sensible defaults.
+    """
+    return create_genai_span_sync(
+        operation_name=GenAI.Values.OperationName.CREATE_AGENT,
+        agent_id=agent_id or GenAI.Values.PhariaAgentId.AGENT_CREATION,
+        agent_name=agent_name,
+        conversation_id=conversation_id,
+        data_context=data_context,
+        additional_attributes=additional_attributes,
+    )
+
+
+def create_agent_invocation_span_sync(
+    *,
+    agent_id: str = GenAI.Values.PhariaAgentId.AGENTIC_CHAT,
+    agent_name: str | None = None,
+    model: str | None = None,
+    conversation_id: str | None = None,
+    data_context: DataContext | None = None,
+    additional_attributes: dict[str, Any] | None = None,
+) -> AbstractContextManager[Span]:
+    """
+    Create an agent invocation span (sync-only) with sensible defaults.
+    """
+    return create_genai_span_sync(
+        operation_name=GenAI.Values.OperationName.INVOKE_AGENT,
+        agent_id=agent_id,
+        agent_name=agent_name,
+        model=model,
+        conversation_id=conversation_id,
+        data_context=data_context,
+        additional_attributes=additional_attributes,
+    )
+
+
+# =============================================================================
 # Async Convenience Functions
 # =============================================================================
 
@@ -1351,6 +1465,12 @@ __all__ = [
     "create_tool_execution_span",
     "create_agent_creation_span",
     "create_agent_invocation_span",
+    # Sync convenience span functions (explicit sync)
+    "create_chat_span_sync",
+    "create_embeddings_span_sync",
+    "create_tool_execution_span_sync",
+    "create_agent_creation_span_sync",
+    "create_agent_invocation_span_sync",
     # Async convenience span functions (explicit async)
     "acreate_chat_span",
     "acreate_embeddings_span",
