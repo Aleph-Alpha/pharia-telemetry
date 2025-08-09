@@ -20,6 +20,8 @@
 
 ## 📦 Installation
 
+Requires Python 3.10+.
+
 ```bash
 # Basic installation
 pip install pharia-telemetry

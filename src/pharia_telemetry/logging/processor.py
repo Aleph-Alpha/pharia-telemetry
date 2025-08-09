@@ -6,7 +6,8 @@ to provide seamless integration with structlog's processing pipeline.
 """
 
 import logging
-from typing import Any, MutableMapping, Optional
+from collections.abc import MutableMapping
+from typing import Any
 
 from pharia_telemetry.logging.injectors import (
     BaggageContextInjector,
@@ -105,8 +106,8 @@ class StructlogBaggageProcessor:
 
     def __init__(
         self,
-        prefix_filter: Optional[str] = None,
-        exclude_keys: Optional[set[str]] = None,
+        prefix_filter: str | None = None,
+        exclude_keys: set[str] | None = None,
     ):
         """
         Initialize the structlog baggage processor.
@@ -216,8 +217,8 @@ def create_structlog_trace_processor(
 
 
 def create_structlog_baggage_processor(
-    prefix_filter: Optional[str] = None,
-    exclude_keys: Optional[set[str]] = None,
+    prefix_filter: str | None = None,
+    exclude_keys: set[str] | None = None,
 ) -> StructlogBaggageProcessor:
     """
     Factory function to create a structlog baggage processor.
@@ -244,8 +245,8 @@ def create_structlog_full_context_processor(
     include_trace_id: bool = True,
     include_span_id: bool = True,
     include_baggage: bool = True,
-    baggage_prefix_filter: Optional[str] = None,
-    baggage_exclude_keys: Optional[set[str]] = None,
+    baggage_prefix_filter: str | None = None,
+    baggage_exclude_keys: set[str] | None = None,
     trace_id_key: str = "trace_id",
     span_id_key: str = "span_id",
 ) -> StructlogCompositeProcessor:
