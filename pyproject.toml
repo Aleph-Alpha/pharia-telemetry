@@ -9,7 +9,7 @@ description = "Telemetry utilities and shared components for Pharia projects"
 readme = "README.md"
 license = "MIT"
 authors = [{ name = "Aleph Alpha Engineering", email = "engineering@aleph-alpha.com" }]
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.10"
 keywords = [
     "telemetry",
     "logging",
@@ -27,6 +27,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: System :: Logging",
     "Topic :: System :: Monitoring",
@@ -132,7 +133,7 @@ exclude_lines = [
 # Ruff configuration
 [tool.ruff]
 line-length = 88
-target-version = "py38"
+target-version = "py310"
 exclude = [
     ".eggs",
     ".git",
@@ -168,7 +169,7 @@ known-first-party = ["pharia_telemetry"]
 
 # mypy configuration
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
 warn_redundant_casts = true
