@@ -7,7 +7,7 @@ for structured data.
 """
 
 import logging
-from typing import Any, Dict, Optional, Protocol
+from typing import Any, Protocol
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ except ImportError:
 class ContextInjector(Protocol):
     """Protocol for context injectors."""
 
-    def inject(self, log_dict: Dict[str, Any]) -> Dict[str, Any]:
+    def inject(self, log_dict: dict[str, Any]) -> dict[str, Any]:
         """Inject context into log dictionary."""
         ...
 
@@ -69,7 +69,7 @@ class TraceContextInjector:
                 "OpenTelemetry not available - TraceContextInjector will be disabled"
             )
 
-    def inject(self, log_dict: Dict[str, Any]) -> Dict[str, Any]:
+    def inject(self, log_dict: dict[str, Any]) -> dict[str, Any]:
         """
         Inject trace context into a log dictionary.
 
@@ -124,8 +124,8 @@ class BaggageContextInjector:
 
     def __init__(
         self,
-        prefix_filter: Optional[str] = None,
-        exclude_keys: Optional[set[str]] = None,
+        prefix_filter: str | None = None,
+        exclude_keys: set[str] | None = None,
     ):
         """
         Initialize the baggage context injector.
@@ -142,7 +142,7 @@ class BaggageContextInjector:
                 "OpenTelemetry not available - BaggageContextInjector will be disabled"
             )
 
-    def inject(self, log_dict: Dict[str, Any]) -> Dict[str, Any]:
+    def inject(self, log_dict: dict[str, Any]) -> dict[str, Any]:
         """
         Inject baggage context into a log dictionary.
 
@@ -205,7 +205,7 @@ class CompositeContextInjector:
         """
         self.injectors = injectors
 
-    def inject(self, log_dict: Dict[str, Any]) -> Dict[str, Any]:
+    def inject(self, log_dict: dict[str, Any]) -> dict[str, Any]:
         """
         Apply all injectors to the log dictionary.
 
@@ -248,8 +248,8 @@ def create_trace_injector(
 
 
 def create_baggage_injector(
-    prefix_filter: Optional[str] = None,
-    exclude_keys: Optional[set[str]] = None,
+    prefix_filter: str | None = None,
+    exclude_keys: set[str] | None = None,
 ) -> BaggageContextInjector:
     """
     Factory function to create a baggage context injector.
@@ -271,8 +271,8 @@ def create_full_context_injector(
     include_trace_id: bool = True,
     include_span_id: bool = True,
     include_baggage: bool = True,
-    baggage_prefix_filter: Optional[str] = None,
-    baggage_exclude_keys: Optional[set[str]] = None,
+    baggage_prefix_filter: str | None = None,
+    baggage_exclude_keys: set[str] | None = None,
     trace_id_key: str = "trace_id",
     span_id_key: str = "span_id",
 ) -> CompositeContextInjector:

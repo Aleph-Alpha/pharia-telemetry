@@ -10,7 +10,6 @@ This is primarily for applications that don't use Pydantic Logfire.
 """
 
 import logging
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +51,7 @@ class BaggageSpanProcessor(SpanProcessor):
         # - etc.
     """
 
-    def __init__(self, prefix_filter: Optional[str] = None):
+    def __init__(self, prefix_filter: str | None = None):
         """
         Initialize the baggage span processor.
 
@@ -61,7 +60,7 @@ class BaggageSpanProcessor(SpanProcessor):
         """
         self.prefix_filter = prefix_filter
 
-    def on_start(self, span: Span, parent_context: Optional[Context] = None) -> None:
+    def on_start(self, span: Span, parent_context: Context | None = None) -> None:
         """
         Called when a span is started. Automatically adds baggage as span attributes.
 

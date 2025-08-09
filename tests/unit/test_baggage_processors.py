@@ -5,7 +5,7 @@ Tests the BaggageSpanProcessor to ensure baggage is correctly
 added to spans as attributes.
 """
 
-from typing import Any, Tuple
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -261,7 +261,7 @@ class TestBaggageSpanProcessorIntegration:
     """Integration tests for BaggageSpanProcessor with real OpenTelemetry components."""
 
     @pytest.fixture
-    def tracer_provider(self) -> Tuple[Any, Any]:
+    def tracer_provider(self) -> tuple[Any, Any]:
         """Create a test tracer provider."""
         try:
             from opentelemetry.sdk.trace import TracerProvider
@@ -280,7 +280,7 @@ class TestBaggageSpanProcessorIntegration:
             pytest.skip("OpenTelemetry not available for integration tests")
 
     def test_baggage_processor_with_real_tracer(
-        self, tracer_provider: Tuple[Any, Any]
+        self, tracer_provider: tuple[Any, Any]
     ) -> None:
         """Test BaggageSpanProcessor with a real OpenTelemetry tracer."""
         try:

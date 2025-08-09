@@ -63,8 +63,8 @@ def set_gen_ai_span_attributes(
     operation_name: str,
     agent_id: str,
     span: Optional["trace.Span"] = None,
-    conversation_id: Optional[str] = None,
-    model_name: Optional[str] = None,
+    conversation_id: str | None = None,
+    model_name: str | None = None,
 ) -> None:
     """
     Set GenAI semantic attributes on a span for AI operations.
@@ -132,7 +132,7 @@ def set_baggage_item(key: str, value: str) -> None:
         logger.error("Failed to set baggage item %s: %s", key, e)
 
 
-def get_baggage_item(key: str) -> Optional[str]:
+def get_baggage_item(key: str) -> str | None:
     """
     Get a baggage item from the current context.
 
