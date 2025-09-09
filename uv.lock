@@ -749,7 +749,6 @@ wheels = [
 
 [[package]]
 name = "pharia-telemetry"
-version = "0.0.4a0"
 source = { editable = "." }
 dependencies = [
     { name = "opentelemetry-api" },

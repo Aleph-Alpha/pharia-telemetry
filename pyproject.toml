@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
 name = "pharia-telemetry"
-version = "0.0.4-alpha.0"
+dynamic = ["version"]
 description = "Telemetry utilities and shared components for Pharia projects"
 readme = "README.md"
 license = "MIT"
@@ -38,12 +38,6 @@ dependencies = [
     "pydantic>=2.0.0",
 ]
 
-# Internal registry configuration - prevents accidental PyPI publication
-[[tool.uv.index]]
-name = "pharia-telemetry-pypi"
-url = "https://alephalpha.jfrog.io/artifactory/api/pypi/pharia-telemetry-pypi"
-publish-url = "https://alephalpha.jfrog.io/artifactory/api/pypi/pharia-telemetry-pypi"
-explicit = true
 
 [dependency-groups]
 dev = [
@@ -72,6 +66,12 @@ Documentation = "https://pharia-telemetry.readthedocs.io"
 Repository = "https://github.com/aleph-alpha/pharia-telemetry"
 Issues = "https://github.com/aleph-alpha/pharia-telemetry/issues"
 Changelog = "https://github.com/aleph-alpha/pharia-telemetry/blob/main/CHANGELOG.md"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/pharia_telemetry/_version.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pharia_telemetry"]
@@ -145,6 +145,7 @@ exclude = [
     "buck-out",
     "build",
     "dist",
+    "_version.py",
 ]
 
 [tool.ruff.lint]

@@ -28,14 +28,11 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ needs.release-please.outputs.release_created }}
     environment:
-      name: release
-      url: https://alephalpha.jfrog.io/artifactory/webapp/#/artifacts/browse/tree/General/pharia-telemetry
+      name: pypi
+      url: https://pypi.org/p/pharia-telemetry
     permissions:
       contents: read
       id-token: write
-    env:
-      ARTIFACTORY_URL: https://alephalpha.jfrog.io
-      ARTIFACTORY_PYPI_REPOSITORY: "pharia-telemetry-pypi"
     steps:
       - uses: actions/checkout@v4
 
@@ -47,22 +44,10 @@ jobs:
         with:
           python-version-file: "pyproject.toml"
 
-      - name: Build and publish to JFrog Artifactory repository
-        run: |
-          uv build
-          echo "Getting JFrog access token..."
-          export UV_PUBLISH_PASSWORD=$(.github/composites/get_jfrog_access_token.sh)
-          echo "Access token length: ${#UV_PUBLISH_PASSWORD}"
-          if [ -z "$UV_PUBLISH_PASSWORD" ]; then
-            echo "ERROR: Failed to get JFrog access token"
-            exit 1
-          fi
-          echo "Getting JFrog username..."
-          export UV_PUBLISH_USERNAME=$(.github/composites/get_jfrog_access_token_subject.sh $UV_PUBLISH_PASSWORD)
-          echo "Username: $UV_PUBLISH_USERNAME"
-          if [ -z "$UV_PUBLISH_USERNAME" ]; then
-            echo "ERROR: Failed to get JFrog username"
-            exit 1
-          fi
-          echo "Publishing to Artifactory..."
-          uv publish --publish-url $ARTIFACTORY_URL/artifactory/api/pypi/$ARTIFACTORY_PYPI_REPOSITORY/
+      - name: Build package
+        run: uv build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          print-hash: true

@@ -5,7 +5,11 @@ This package provides a clean, consolidated API for OpenTelemetry tracing
 with semantic conventions for GenAI operations.
 """
 
-from importlib.metadata import version
+try:
+    from pharia_telemetry._version import __version__
+except ImportError:
+    # Fallback for development installations
+    __version__ = "dev"
 
 # Constants available via direct import: from pharia_telemetry.constants import ...
 # Baggage utilities
@@ -39,7 +43,6 @@ from pharia_telemetry.sem_conv.gen_ai import (
 # Core setup function
 from pharia_telemetry.setup import get_tracer, setup_telemetry
 
-__version__ = version("pharia-telemetry")
 __author__ = "Aleph Alpha Engineering"
 __email__ = "engineering@aleph-alpha.com"
 
