@@ -68,8 +68,13 @@ git checkout -b fix/issue-description
 # Run all tests
 uv run pytest
 
-# Run with coverage
-uv run pytest --cov=pharia_telemetry --cov-report=html
+# Run with coverage (generates HTML report)
+uv run pytest --cov=pharia_telemetry --cov-report=html --cov-report=term-missing
+
+# View coverage report in browser
+open htmlcov/index.html  # macOS
+# or
+xdg-open htmlcov/index.html  # Linux
 
 # Code formatting and linting with ruff
 uv run ruff format .
