@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test test-cov lint format type-check clean build docs
+.PHONY: help install install-dev test coverage test-cov lint format type-check clean build docs
 
 
 help:
@@ -6,6 +6,7 @@ help:
 	@echo "  install      Install the package"
 	@echo "  install-dev  Install development dependencies"
 	@echo "  test         Run tests"
+	@echo "  coverage     Run tests with coverage (alias for test-cov)"
 	@echo "  test-cov     Run tests with coverage"
 	@echo "  lint         Run linting checks"
 	@echo "  format       Format code with ruff"
@@ -23,6 +24,10 @@ install-dev:
 
 test:
 	uv run pytest
+
+coverage:
+	uv run pytest --cov=pharia_telemetry --cov-report=html --cov-report=term-missing
+	@echo "📊 Coverage report generated at: htmlcov/index.html"
 
 test-cov:
 	uv run pytest --cov=pharia_telemetry --cov-report=html --cov-report=term-missing

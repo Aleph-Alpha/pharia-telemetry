@@ -3,8 +3,8 @@
 [![Python](https://img.shields.io/pypi/pyversions/pharia-telemetry.svg)](https://pypi.org/project/pharia-telemetry/)
 [![PyPI version](https://badge.fury.io/py/pharia-telemetry.svg)](https://badge.fury.io/py/pharia-telemetry)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Pipeline Status](https://gitlab.aleph-alpha.de/repos-for-builds/pharia-telemetry/badges/main/pipeline.svg)](https://gitlab.aleph-alpha.de/repos-for-builds/pharia-telemetry/-/pipelines?ref=main)
-[![Coverage](https://gitlab.aleph-alpha.de/repos-for-builds/pharia-telemetry/badges/main/coverage.svg)](https://gitlab.aleph-alpha.de/repos-for-builds/pharia-telemetry/-/graphs/main/charts)
+[![CI](https://github.com/aleph-alpha/pharia-telemetry/workflows/CI/badge.svg)](https://github.com/aleph-alpha/pharia-telemetry/actions/workflows/ci.yml)
+![Coverage](https://img.shields.io/badge/coverage-check%20latest%20PR-blue)
 
 **A clean, minimal OpenTelemetry foundation library for Pharia services providing observability, tracing, and context propagation utilities.**
 
@@ -30,23 +30,26 @@ pip install pharia-telemetry
 pip install pharia-telemetry[structlog]
 ```
 
-### Install from GitLab (pinned to commit)
+### Install from GitHub (pinned to commit)
 
-For services that depend on a specific commit from the GitLab repo (no GitLab releases yet), use a direct VCS reference:
+For services that depend on a specific commit from the GitHub repo, use a direct VCS reference:
 
 ```bash
-# SSH (recommended inside AA infra)
-pip install "pharia-telemetry @ git+ssh://git@gitlab.aleph-alpha.de/repos-for-builds/pharia-telemetry.git@<commit-sha>"
+# HTTPS (recommended)
+pip install "pharia-telemetry @ git+https://github.com/aleph-alpha/pharia-telemetry.git@<commit-sha>"
+
+# SSH (if you have SSH keys configured)
+pip install "pharia-telemetry @ git+ssh://git@github.com/aleph-alpha/pharia-telemetry.git@<commit-sha>"
 
 # With optional extras
-pip install "pharia-telemetry[structlog] @ git+ssh://git@gitlab.aleph-alpha.de/repos-for-builds/pharia-telemetry.git@<commit-sha>"
+pip install "pharia-telemetry[structlog] @ git+https://github.com/aleph-alpha/pharia-telemetry.git@<commit-sha>"
 ```
 
 In requirements files (PEP 508):
 
 ```
-pharia-telemetry @ git+ssh://git@gitlab.aleph-alpha.de/repos-for-builds/pharia-telemetry.git@<commit-sha>
-pharia-telemetry[structlog] @ git+ssh://git@gitlab.aleph-alpha.de/repos-for-builds/pharia-telemetry.git@<commit-sha>
+pharia-telemetry @ git+https://github.com/aleph-alpha/pharia-telemetry.git@<commit-sha>
+pharia-telemetry[structlog] @ git+https://github.com/aleph-alpha/pharia-telemetry.git@<commit-sha>
 ```
 
 ## 🚀 30-Second Setup
@@ -249,4 +252,4 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 ## 📞 Support
 
 - 📧 **Email**: conrad.poepke@aleph-alpha.com
-- 🐛 **Issues**: [GitLab Issues](https://gitlab.aleph-alpha.de/repos-for-builds/pharia-telemetry/-/issues)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/aleph-alpha/pharia-telemetry/issues)
