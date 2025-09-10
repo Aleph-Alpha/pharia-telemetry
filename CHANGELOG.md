@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/Aleph-Alpha/pharia-telemetry/compare/v0.2.0...v0.3.0) (2025-09-10)
+
+
+### Features
+
+* **release:** License update and PyPI secret ([21f0c90](https://github.com/Aleph-Alpha/pharia-telemetry/commit/21f0c9024f46d7d0b2b3ff471d0c09d7e381aae1))
+* **release:** License update and PyPI secret ([21f0c90](https://github.com/Aleph-Alpha/pharia-telemetry/commit/21f0c9024f46d7d0b2b3ff471d0c09d7e381aae1))
+
 ## [0.2.0](https://github.com/Aleph-Alpha/pharia-telemetry/compare/v0.1.0...v0.2.0) (2025-09-09)
 
 
