@@ -70,6 +70,10 @@ Changelog = "https://github.com/aleph-alpha/pharia-telemetry/blob/main/CHANGELOG
 [tool.hatch.version]
 source = "vcs"
 
+[tool.hatch.version.raw-options]
+# Ensure no local version identifiers for PyPI compatibility
+local_scheme = "no-local-version"
+
 [tool.hatch.build.hooks.vcs]
 version-file = "src/pharia_telemetry/_version.py"
 
