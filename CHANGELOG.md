@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.1](https://github.com/Aleph-Alpha/pharia-telemetry/compare/v0.1.0...v0.1.1) (2025-09-11)
+
+
+### Bug Fixes
+
+* **ci:** Add checkout step and manual publish trigger to release-please workflow ([8c6ed7f](https://github.com/Aleph-Alpha/pharia-telemetry/commit/8c6ed7f3e3ebe7a9eb5bdcfa4dff29a8a814442e))
+* **ci:** Add full git history to publish job for correct version detection ([e26db1b](https://github.com/Aleph-Alpha/pharia-telemetry/commit/e26db1bc2d47504c079d2f028ea3cb5c1e581777))
+* **ci:** Add tag-specific checkout for manual publish ([dd9c9f7](https://github.com/Aleph-Alpha/pharia-telemetry/commit/dd9c9f71b426a46ff9e5e840385891b8df6ca1d1))
+* switch PyPI badge from badge.fury.io to shields.io for better reliability ([c992881](https://github.com/Aleph-Alpha/pharia-telemetry/commit/c992881f379a801bcbdeccd2767dfb1f25be8712))
+
 ## 0.1.0 (2025-09-11)
 
 
