@@ -1,7 +1,7 @@
 # Pharia Telemetry
 
 [![Python](https://img.shields.io/pypi/pyversions/pharia-telemetry.svg)](https://pypi.org/project/pharia-telemetry/)
-[![PyPI version](https://badge.fury.io/py/pharia-telemetry.svg)](https://badge.fury.io/py/pharia-telemetry)
+[![PyPI version](https://img.shields.io/pypi/v/pharia-telemetry.svg)](https://pypi.org/project/pharia-telemetry/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/aleph-alpha/pharia-telemetry/workflows/CI/badge.svg)](https://github.com/aleph-alpha/pharia-telemetry/actions/workflows/ci.yml)
 ![Coverage](https://img.shields.io/badge/coverage-check%20latest%20PR-blue)
