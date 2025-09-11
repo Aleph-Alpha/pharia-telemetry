@@ -3,11 +3,19 @@ name: Release Please
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      force_publish:
+        description: 'Force publish the current tagged version to PyPI'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
   pull-requests: write
-  issues: write        # Added: needed for label management
+  issues: write
+  actions: write       # Added: needed for workflow management
 
 jobs:
   release-please:
@@ -16,6 +24,11 @@ jobs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for release-please
+          
       - name: Release Please
         id: release
         uses: googleapis/release-please-action@v4
@@ -26,7 +39,7 @@ jobs:
   publish:
     needs: release-please
     runs-on: ubuntu-latest
-    if: ${{ needs.release-please.outputs.release_created }}
+    if: ${{ needs.release-please.outputs.release_created || github.event.inputs.force_publish == 'true' }}
     environment:
       name: pypi
       url: https://pypi.org/p/pharia-telemetry
