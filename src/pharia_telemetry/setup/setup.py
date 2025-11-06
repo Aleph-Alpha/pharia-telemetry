@@ -109,7 +109,7 @@ def setup_telemetry(
 
         # Add OTLP exporter (always enabled by default)
         try:
-            from opentelemetry.exporter.otlp.proto.grpc import (  # type: ignore[import-not-found]
+            from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (  # type: ignore[import-not-found]
                 OTLPSpanExporter,
             )
             from opentelemetry.sdk.trace.export import BatchSpanProcessor
