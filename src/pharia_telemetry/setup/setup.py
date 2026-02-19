@@ -108,10 +108,28 @@ def setup_telemetry(
                 logger.error("Failed to add BaggageSpanProcessor: %s", e)
 
         # Add OTLP exporter (always enabled by default)
+        # Respect OTEL_EXPORTER_OTLP_PROTOCOL / OTEL_EXPORTER_OTLP_TRACES_PROTOCOL
+        # Per OTel spec, default is http/protobuf
+        otlp_protocol = os.getenv(
+            "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
+            os.getenv("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf"),
+        )
+
+        if otlp_protocol == "grpc":
+            pip_package = "opentelemetry-exporter-otlp-proto-grpc"
+        else:
+            pip_package = "opentelemetry-exporter-otlp-proto-http"
+
         try:
-            from opentelemetry.exporter.otlp.proto.grpc import (  # type: ignore[import-not-found]
-                OTLPSpanExporter,
-            )
+            if otlp_protocol == "grpc":
+                from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (  # type: ignore[import-not-found]
+                    OTLPSpanExporter,
+                )
+            else:
+                from opentelemetry.exporter.otlp.proto.http.trace_exporter import (  # type: ignore[import-not-found]
+                    OTLPSpanExporter,
+                )
+
             from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
             # Parse headers from environment
@@ -128,9 +146,16 @@ def setup_telemetry(
                 headers=headers if headers else None,
             )
             provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
-            logger.debug("OTLP exporter added to tracer provider")
+            logger.debug("OTLP %s exporter added to tracer provider", otlp_protocol)
+        except ImportError:
+            logger.warning(
+                "OTLP exporter for protocol '%s' not available. "
+                "Install '%s' to enable trace export.",
+                otlp_protocol,
+                pip_package,
+            )
         except Exception as e:
-            logger.error("Failed to add OTLP exporter: %s", e)
+            logger.warning("Failed to add OTLP exporter: %s", e)
 
         # Add console exporter (auto-detect if not explicitly set)
         if enable_console_exporter is None:
