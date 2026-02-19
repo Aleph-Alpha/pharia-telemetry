@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.2](https://github.com/Aleph-Alpha/pharia-telemetry/compare/v0.1.1...v0.1.2) (2026-02-19)
+
+
+### Bug Fixes
+
+* upgrade transitive dependencies to resolve security vulnerabilities ([#13](https://github.com/Aleph-Alpha/pharia-telemetry/issues/13)) ([0d9256c](https://github.com/Aleph-Alpha/pharia-telemetry/commit/0d9256c1a5de64e1c8215bcd1d46b023fc08cf4f))
+* use OTEL_EXPORTER_OTLP_PROTOCOL env var to select OTLP exporter ([#9](https://github.com/Aleph-Alpha/pharia-telemetry/issues/9)) ([522124d](https://github.com/Aleph-Alpha/pharia-telemetry/commit/522124d1279cc6bbdfb5060bdbe49830551ff340))
+
+
+### Documentation
+
+* add CLAUDE.md with project context for Claude Code ([61611c3](https://github.com/Aleph-Alpha/pharia-telemetry/commit/61611c317be64db841c97f1a243fe1cf62512a55))
+
 ## [0.1.1](https://github.com/Aleph-Alpha/pharia-telemetry/compare/v0.1.0...v0.1.1) (2025-09-11)
 
 
