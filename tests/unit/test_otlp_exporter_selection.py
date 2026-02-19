@@ -50,7 +50,9 @@ class TestOtlpExporterProtocolSelection:
             from pharia_telemetry.setup.setup import setup_telemetry
 
             result = setup_telemetry(
-                "test-svc", enable_console_exporter=False, enable_baggage_processor=False
+                "test-svc",
+                enable_console_exporter=False,
+                enable_baggage_processor=False,
             )
 
         assert result is True
@@ -72,7 +74,9 @@ class TestOtlpExporterProtocolSelection:
             from pharia_telemetry.setup.setup import setup_telemetry
 
             result = setup_telemetry(
-                "test-svc", enable_console_exporter=False, enable_baggage_processor=False
+                "test-svc",
+                enable_console_exporter=False,
+                enable_baggage_processor=False,
             )
 
         assert result is True
@@ -94,7 +98,9 @@ class TestOtlpExporterProtocolSelection:
             from pharia_telemetry.setup.setup import setup_telemetry
 
             result = setup_telemetry(
-                "test-svc", enable_console_exporter=False, enable_baggage_processor=False
+                "test-svc",
+                enable_console_exporter=False,
+                enable_baggage_processor=False,
             )
 
         assert result is True
