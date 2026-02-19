@@ -13,6 +13,7 @@ from urllib.parse import unquote
 
 if TYPE_CHECKING:
     from opentelemetry import trace
+    from opentelemetry.sdk.trace import TracerProvider
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,143 @@ try:
 except ImportError:
     OTEL_AVAILABLE = False
     logger.warning("OpenTelemetry not available - tracing will be disabled")
+
+
+def _setup_propagators() -> None:
+    """Configure W3C TraceContext and Baggage propagators."""
+    from opentelemetry import propagate
+    from opentelemetry.baggage.propagation import W3CBaggagePropagator
+    from opentelemetry.propagators.composite import CompositePropagator
+    from opentelemetry.trace.propagation.tracecontext import (
+        TraceContextTextMapPropagator,
+    )
+
+    propagate.set_global_textmap(
+        CompositePropagator(
+            [
+                TraceContextTextMapPropagator(),
+                W3CBaggagePropagator(),
+            ]
+        )
+    )
+    logger.debug("Configured OpenTelemetry propagators: TraceContext, Baggage")
+
+
+def _build_resource_attrs(
+    service_name: str,
+    service_version: str | None,
+    environment: str | None,
+) -> dict[str, str]:
+    """Build the OTel resource attributes dictionary."""
+    attrs: dict[str, str] = {
+        "service.name": service_name,
+        "service.instance.id": os.getenv("HOSTNAME") or "unknown",
+        "deployment.environment": environment or os.getenv("ENVIRONMENT") or "unknown",
+    }
+    if service_version:
+        attrs["service.version"] = service_version
+    return attrs
+
+
+def _create_tracer_provider(resource_attrs: dict[str, str]) -> TracerProvider:
+    """Create and register a TracerProvider with the given resource attributes."""
+    from opentelemetry import trace
+    from opentelemetry.sdk.resources import Resource
+    from opentelemetry.sdk.trace import TracerProvider
+
+    provider = TracerProvider(resource=Resource(attributes=resource_attrs))
+    trace.set_tracer_provider(provider)
+    return provider
+
+
+def _add_baggage_processor(provider: TracerProvider) -> None:
+    """Add the BaggageSpanProcessor to the provider."""
+    try:
+        from pharia_telemetry.baggage.processors import BaggageSpanProcessor
+
+        provider.add_span_processor(BaggageSpanProcessor())
+        logger.debug("BaggageSpanProcessor added to tracer provider")
+    except Exception as e:
+        logger.error("Failed to add BaggageSpanProcessor: %s", e)
+
+
+def _parse_otlp_headers() -> dict[str, str] | None:
+    """Parse OTEL_EXPORTER_OTLP_HEADERS into a dict, or return None if unset."""
+    headers_str = os.getenv("OTEL_EXPORTER_OTLP_HEADERS")
+    if not headers_str:
+        return None
+
+    headers: dict[str, str] = {}
+    for header in headers_str.split(","):
+        if "=" in header:
+            key, value = header.split("=", 1)
+            headers[key.strip()] = unquote(value.strip())
+    return headers or None
+
+
+def _add_otlp_exporter(provider: TracerProvider) -> None:
+    """Add the OTLP span exporter based on protocol environment variables."""
+    otlp_protocol = os.getenv(
+        "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
+        os.getenv("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf"),
+    )
+
+    if otlp_protocol == "grpc":
+        pip_package = "opentelemetry-exporter-otlp-proto-grpc"
+    else:
+        pip_package = "opentelemetry-exporter-otlp-proto-http"
+
+    try:
+        if otlp_protocol == "grpc":
+            from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (  # type: ignore[import-not-found]
+                OTLPSpanExporter,
+            )
+        else:
+            from opentelemetry.exporter.otlp.proto.http.trace_exporter import (  # type: ignore[import-not-found]
+                OTLPSpanExporter,
+            )
+
+        from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+        otlp_exporter = OTLPSpanExporter(
+            endpoint=os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"),
+            headers=_parse_otlp_headers(),
+        )
+        provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
+        logger.debug("OTLP %s exporter added to tracer provider", otlp_protocol)
+    except ImportError:
+        logger.warning(
+            "OTLP exporter for protocol '%s' not available. "
+            "Install '%s' to enable trace export.",
+            otlp_protocol,
+            pip_package,
+        )
+    except Exception as e:
+        logger.warning("Failed to add OTLP exporter: %s", e)
+
+
+def _should_enable_console_exporter(environment: str | None) -> bool:
+    """Determine whether the console exporter should be enabled via auto-detection."""
+    is_debug_logging = os.getenv("LOG_LEVEL", "").upper() == "DEBUG"
+    is_console_exporter = os.getenv("OTEL_TRACES_EXPORTER") == "console"
+    is_dev_environment = (
+        environment == "development" or os.getenv("ENVIRONMENT") == "development"
+    )
+    return is_debug_logging or is_console_exporter or is_dev_environment
+
+
+def _add_console_exporter(provider: TracerProvider) -> None:
+    """Add a console span exporter to the provider."""
+    try:
+        from opentelemetry.sdk.trace.export import (
+            BatchSpanProcessor,
+            ConsoleSpanExporter,
+        )
+
+        provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
+        logger.info("Console trace exporter enabled for development/debugging")
+    except Exception as e:
+        logger.error("Failed to add console exporter: %s", e)
 
 
 def setup_telemetry(
@@ -56,131 +194,26 @@ def setup_telemetry(
         return False
 
     try:
-        # Setup propagators
-        from opentelemetry import propagate
-        from opentelemetry.baggage.propagation import W3CBaggagePropagator
-        from opentelemetry.propagators.composite import CompositePropagator
-        from opentelemetry.trace.propagation.tracecontext import (
-            TraceContextTextMapPropagator,
+        _setup_propagators()
+
+        resource_attrs = _build_resource_attrs(
+            service_name, service_version, environment
         )
-
-        propagators = [
-            TraceContextTextMapPropagator(),  # W3C TraceContext
-            W3CBaggagePropagator(),  # W3C Baggage for user context propagation
-        ]
-        composite_propagator = CompositePropagator(propagators)
-        propagate.set_global_textmap(composite_propagator)
-        logger.debug("Configured OpenTelemetry propagators: TraceContext, Baggage")
-
-        # Build resource attributes (ensure all values are strings, not None)
-        resource_attrs: dict[str, str] = {
-            "service.name": service_name,
-            "service.instance.id": os.getenv("HOSTNAME") or "unknown",
-            "deployment.environment": environment
-            or os.getenv("ENVIRONMENT")
-            or "unknown",
-        }
-
-        if service_version:
-            resource_attrs["service.version"] = service_version
-
-        # Create tracer provider
-        from opentelemetry import trace
-        from opentelemetry.sdk.resources import Resource
-        from opentelemetry.sdk.trace import TracerProvider
-
-        resource = Resource(attributes=resource_attrs)
-        provider = TracerProvider(resource=resource)
-        trace.set_tracer_provider(provider)
+        provider = _create_tracer_provider(resource_attrs)
         logger.info(
             "OpenTelemetry TracerProvider configured for service: %s", service_name
         )
 
-        # Add baggage processor
         if enable_baggage_processor:
-            try:
-                from pharia_telemetry.baggage.processors import BaggageSpanProcessor
+            _add_baggage_processor(provider)
 
-                baggage_processor = BaggageSpanProcessor()
-                provider.add_span_processor(baggage_processor)
-                logger.debug("BaggageSpanProcessor added to tracer provider")
-            except Exception as e:
-                logger.error("Failed to add BaggageSpanProcessor: %s", e)
+        _add_otlp_exporter(provider)
 
-        # Add OTLP exporter (always enabled by default)
-        # Respect OTEL_EXPORTER_OTLP_PROTOCOL / OTEL_EXPORTER_OTLP_TRACES_PROTOCOL
-        # Per OTel spec, default is http/protobuf
-        otlp_protocol = os.getenv(
-            "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
-            os.getenv("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf"),
-        )
-
-        if otlp_protocol == "grpc":
-            pip_package = "opentelemetry-exporter-otlp-proto-grpc"
-        else:
-            pip_package = "opentelemetry-exporter-otlp-proto-http"
-
-        try:
-            if otlp_protocol == "grpc":
-                from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (  # type: ignore[import-not-found]
-                    OTLPSpanExporter,
-                )
-            else:
-                from opentelemetry.exporter.otlp.proto.http.trace_exporter import (  # type: ignore[import-not-found]
-                    OTLPSpanExporter,
-                )
-
-            from opentelemetry.sdk.trace.export import BatchSpanProcessor
-
-            # Parse headers from environment
-            headers_str = os.getenv("OTEL_EXPORTER_OTLP_HEADERS")
-            headers = {}
-            if headers_str:
-                for header in headers_str.split(","):
-                    if "=" in header:
-                        key, value = header.split("=", 1)
-                        headers[key.strip()] = unquote(value.strip())
-
-            otlp_exporter = OTLPSpanExporter(
-                endpoint=os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"),
-                headers=headers if headers else None,
-            )
-            provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
-            logger.debug("OTLP %s exporter added to tracer provider", otlp_protocol)
-        except ImportError:
-            logger.warning(
-                "OTLP exporter for protocol '%s' not available. "
-                "Install '%s' to enable trace export.",
-                otlp_protocol,
-                pip_package,
-            )
-        except Exception as e:
-            logger.warning("Failed to add OTLP exporter: %s", e)
-
-        # Add console exporter (auto-detect if not explicitly set)
         if enable_console_exporter is None:
-            is_debug_logging = os.getenv("LOG_LEVEL", "").upper() == "DEBUG"
-            is_console_exporter = os.getenv("OTEL_TRACES_EXPORTER") == "console"
-            is_dev_environment = (
-                environment == "development"
-                or os.getenv("ENVIRONMENT") == "development"
-            )
-            enable_console_exporter = (
-                is_debug_logging or is_console_exporter or is_dev_environment
-            )
+            enable_console_exporter = _should_enable_console_exporter(environment)
 
         if enable_console_exporter:
-            try:
-                from opentelemetry.sdk.trace.export import (
-                    BatchSpanProcessor,
-                    ConsoleSpanExporter,
-                )
-
-                console_processor = BatchSpanProcessor(ConsoleSpanExporter())
-                provider.add_span_processor(console_processor)
-                logger.info("Console trace exporter enabled for development/debugging")
-            except Exception as e:
-                logger.error("Failed to add console exporter: %s", e)
+            _add_console_exporter(provider)
 
         logger.info("OpenTelemetry tracing setup complete for %s", service_name)
         return True

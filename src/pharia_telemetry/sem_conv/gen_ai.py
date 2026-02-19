@@ -396,6 +396,48 @@ class GenAI:
 # =============================================================================
 
 
+def _prepare_genai_span(
+    operation_name: str,
+    *,
+    agent_id: str | None,
+    agent_name: str | None,
+    model: str | None,
+    conversation_id: str | None,
+    tool_name: str | None,
+    data_context: DataContext | None,
+    span_kind: SpanKind | None,
+    additional_attributes: dict[str, Any] | None,
+) -> tuple[None, Span] | tuple[Any, tuple[str, SpanKind, dict[str, Any]]]:
+    """
+    Prepare a GenAI span by resolving the tracer and building attributes.
+
+    Returns either (None, non_recording_span) when no tracing is available,
+    or (tracer, (span_name, span_kind, attributes)) when ready to create a span.
+    """
+    if not OTEL_AVAILABLE:
+        return None, NonRecordingSpan(INVALID_SPAN_CONTEXT)
+
+    tracer = get_tracer()
+    if not tracer:
+        return None, NonRecordingSpan(INVALID_SPAN_CONTEXT)
+
+    if span_kind is None:
+        span_kind = SpanKind.CLIENT
+
+    span_name, attributes = _build_span_name_and_attributes(
+        operation_name=operation_name,
+        agent_id=agent_id,
+        agent_name=agent_name,
+        model=model,
+        conversation_id=conversation_id,
+        tool_name=tool_name,
+        data_context=data_context,
+        additional_attributes=additional_attributes,
+    )
+
+    return tracer, (span_name, span_kind, attributes)
+
+
 @contextmanager
 def create_genai_span_sync(
     operation_name: str,
@@ -439,23 +481,7 @@ def create_genai_span_sync(
             span.set_attribute("gen_ai.usage.input_tokens", response.usage.prompt_tokens)
         ```
     """
-    # If OpenTelemetry is not available (as detected in this module), return a no-op span
-    if not OTEL_AVAILABLE:
-        yield NonRecordingSpan(INVALID_SPAN_CONTEXT)
-        return
-
-    tracer = get_tracer()
-    if not tracer:
-        # Create a proper NonRecordingSpan with context when no tracer is available
-        yield NonRecordingSpan(INVALID_SPAN_CONTEXT)
-        return
-
-    # Set default span kind if not provided
-    if span_kind is None:
-        span_kind = SpanKind.CLIENT
-
-    # Use shared logic to build span name and attributes
-    span_name, attributes = _build_span_name_and_attributes(
+    tracer, result = _prepare_genai_span(
         operation_name=operation_name,
         agent_id=agent_id,
         agent_name=agent_name,
@@ -463,12 +489,16 @@ def create_genai_span_sync(
         conversation_id=conversation_id,
         tool_name=tool_name,
         data_context=data_context,
+        span_kind=span_kind,
         additional_attributes=additional_attributes,
     )
+    if tracer is None:
+        yield result  # type: ignore[misc]
+        return
 
-    # Create and yield the span
+    span_name, resolved_kind, attributes = result  # type: ignore[misc]
     with tracer.start_as_current_span(
-        span_name, kind=span_kind, attributes=attributes
+        span_name, kind=resolved_kind, attributes=attributes
     ) as span:
         yield span
 
@@ -516,23 +546,7 @@ async def create_genai_span_async(
             span.set_attribute("gen_ai.usage.input_tokens", response.usage.prompt_tokens)
         ```
     """
-    # If OpenTelemetry is not available (as detected in this module), return a no-op span
-    if not OTEL_AVAILABLE:
-        yield NonRecordingSpan(INVALID_SPAN_CONTEXT)
-        return
-
-    tracer = get_tracer()
-    if not tracer:
-        # Create a proper NonRecordingSpan with context when no tracer is available
-        yield NonRecordingSpan(INVALID_SPAN_CONTEXT)
-        return
-
-    # Set default span kind if not provided
-    if span_kind is None:
-        span_kind = SpanKind.CLIENT
-
-    # Use shared logic to build span name and attributes
-    span_name, attributes = _build_span_name_and_attributes(
+    tracer, result = _prepare_genai_span(
         operation_name=operation_name,
         agent_id=agent_id,
         agent_name=agent_name,
@@ -540,12 +554,16 @@ async def create_genai_span_async(
         conversation_id=conversation_id,
         tool_name=tool_name,
         data_context=data_context,
+        span_kind=span_kind,
         additional_attributes=additional_attributes,
     )
+    if tracer is None:
+        yield result  # type: ignore[misc]
+        return
 
-    # Create and yield the span
+    span_name, resolved_kind, attributes = result  # type: ignore[misc]
     with tracer.start_as_current_span(
-        span_name, kind=span_kind, attributes=attributes
+        span_name, kind=resolved_kind, attributes=attributes
     ) as span:
         yield span
 
@@ -618,36 +636,111 @@ def create_genai_span(
             pass
         ```
     """
-    # Detect if we're in an async context
+    kwargs: dict[str, Any] = {
+        "operation_name": operation_name,
+        "agent_id": agent_id,
+        "agent_name": agent_name,
+        "model": model,
+        "conversation_id": conversation_id,
+        "tool_name": tool_name,
+        "data_context": data_context,
+        "span_kind": span_kind,
+        "additional_attributes": additional_attributes,
+    }
     if _is_async_context():
-        return create_genai_span_async(
-            operation_name=operation_name,
-            agent_id=agent_id,
-            agent_name=agent_name,
-            model=model,
-            conversation_id=conversation_id,
-            tool_name=tool_name,
-            data_context=data_context,
-            span_kind=span_kind,
-            additional_attributes=additional_attributes,
-        )
-    else:
-        return create_genai_span_sync(
-            operation_name=operation_name,
-            agent_id=agent_id,
-            agent_name=agent_name,
-            model=model,
-            conversation_id=conversation_id,
-            tool_name=tool_name,
-            data_context=data_context,
-            span_kind=span_kind,
-            additional_attributes=additional_attributes,
-        )
+        return create_genai_span_async(**kwargs)
+    return create_genai_span_sync(**kwargs)
 
 
 # =============================================================================
 # Convenience Functions
 # =============================================================================
+
+
+def _chat_kwargs(
+    agent_id: str,
+    agent_name: str | None,
+    model: str | None,
+    conversation_id: str | None,
+    data_context: DataContext | None,
+    additional_attributes: dict[str, Any] | None,
+) -> dict[str, Any]:
+    return {
+        "operation_name": GenAI.Values.OperationName.CHAT,
+        "agent_id": agent_id,
+        "agent_name": agent_name,
+        "model": model,
+        "conversation_id": conversation_id,
+        "data_context": data_context,
+        "additional_attributes": additional_attributes,
+    }
+
+
+def _embeddings_kwargs(
+    model: str | None,
+    data_context: DataContext | None,
+    additional_attributes: dict[str, Any] | None,
+) -> dict[str, Any]:
+    return {
+        "operation_name": GenAI.Values.OperationName.EMBEDDINGS,
+        "agent_name": "embeddings_agent",
+        "model": model,
+        "data_context": data_context,
+        "additional_attributes": additional_attributes,
+    }
+
+
+def _tool_execution_kwargs(
+    tool_name: str,
+    agent_id: str,
+    conversation_id: str | None,
+    data_context: DataContext | None,
+    additional_attributes: dict[str, Any] | None,
+) -> dict[str, Any]:
+    return {
+        "operation_name": GenAI.Values.OperationName.EXECUTE_TOOL,
+        "tool_name": tool_name,
+        "agent_id": agent_id,
+        "conversation_id": conversation_id,
+        "data_context": data_context,
+        "additional_attributes": additional_attributes,
+    }
+
+
+def _agent_creation_kwargs(
+    agent_id: str | None,
+    agent_name: str | None,
+    conversation_id: str | None,
+    data_context: DataContext | None,
+    additional_attributes: dict[str, Any] | None,
+) -> dict[str, Any]:
+    return {
+        "operation_name": GenAI.Values.OperationName.CREATE_AGENT,
+        "agent_id": agent_id or GenAI.Values.PhariaAgentId.AGENT_CREATION,
+        "agent_name": agent_name,
+        "conversation_id": conversation_id,
+        "data_context": data_context,
+        "additional_attributes": additional_attributes,
+    }
+
+
+def _agent_invocation_kwargs(
+    agent_id: str,
+    agent_name: str | None,
+    model: str | None,
+    conversation_id: str | None,
+    data_context: DataContext | None,
+    additional_attributes: dict[str, Any] | None,
+) -> dict[str, Any]:
+    return {
+        "operation_name": GenAI.Values.OperationName.INVOKE_AGENT,
+        "agent_id": agent_id,
+        "agent_name": agent_name,
+        "model": model,
+        "conversation_id": conversation_id,
+        "data_context": data_context,
+        "additional_attributes": additional_attributes,
+    }
 
 
 def create_chat_span(
@@ -687,13 +780,14 @@ def create_chat_span(
         ```
     """
     return create_genai_span(
-        operation_name=GenAI.Values.OperationName.CHAT,
-        agent_id=agent_id,
-        agent_name=agent_name,
-        model=model,
-        conversation_id=conversation_id,
-        data_context=data_context,
-        additional_attributes=additional_attributes,
+        **_chat_kwargs(
+            agent_id,
+            agent_name,
+            model,
+            conversation_id,
+            data_context,
+            additional_attributes,
+        )
     )
 
 
@@ -727,11 +821,7 @@ def create_embeddings_span(
         ```
     """
     return create_genai_span(
-        operation_name=GenAI.Values.OperationName.EMBEDDINGS,
-        agent_name="embeddings_agent",
-        model=model,
-        data_context=data_context,
-        additional_attributes=additional_attributes,
+        **_embeddings_kwargs(model, data_context, additional_attributes)
     )
 
 
@@ -770,12 +860,13 @@ def create_tool_execution_span(
         ```
     """
     return create_genai_span(
-        operation_name=GenAI.Values.OperationName.EXECUTE_TOOL,
-        tool_name=tool_name,
-        agent_id=agent_id,
-        conversation_id=conversation_id,
-        data_context=data_context,
-        additional_attributes=additional_attributes,
+        **_tool_execution_kwargs(
+            tool_name,
+            agent_id,
+            conversation_id,
+            data_context,
+            additional_attributes,
+        )
     )
 
 
@@ -813,12 +904,13 @@ def create_agent_creation_span(
         ```
     """
     return create_genai_span(
-        operation_name=GenAI.Values.OperationName.CREATE_AGENT,
-        agent_id=agent_id or GenAI.Values.PhariaAgentId.AGENT_CREATION,
-        agent_name=agent_name,
-        conversation_id=conversation_id,
-        data_context=data_context,
-        additional_attributes=additional_attributes,
+        **_agent_creation_kwargs(
+            agent_id,
+            agent_name,
+            conversation_id,
+            data_context,
+            additional_attributes,
+        )
     )
 
 
@@ -859,13 +951,14 @@ def create_agent_invocation_span(
         ```
     """
     return create_genai_span(
-        operation_name=GenAI.Values.OperationName.INVOKE_AGENT,
-        agent_id=agent_id,
-        agent_name=agent_name,
-        model=model,
-        conversation_id=conversation_id,
-        data_context=data_context,
-        additional_attributes=additional_attributes,
+        **_agent_invocation_kwargs(
+            agent_id,
+            agent_name,
+            model,
+            conversation_id,
+            data_context,
+            additional_attributes,
+        )
     )
 
 
@@ -890,13 +983,14 @@ def create_chat_span_sync(
     checkers (e.g., mypy) happy when used inside a normal `with` block.
     """
     return create_genai_span_sync(
-        operation_name=GenAI.Values.OperationName.CHAT,
-        agent_id=agent_id,
-        agent_name=agent_name,
-        model=model,
-        conversation_id=conversation_id,
-        data_context=data_context,
-        additional_attributes=additional_attributes,
+        **_chat_kwargs(
+            agent_id,
+            agent_name,
+            model,
+            conversation_id,
+            data_context,
+            additional_attributes,
+        )
     )
 
 
@@ -910,11 +1004,7 @@ def create_embeddings_span_sync(
     Create an embeddings span (sync-only) with sensible defaults.
     """
     return create_genai_span_sync(
-        operation_name=GenAI.Values.OperationName.EMBEDDINGS,
-        agent_name="embeddings_agent",
-        model=model,
-        data_context=data_context,
-        additional_attributes=additional_attributes,
+        **_embeddings_kwargs(model, data_context, additional_attributes)
     )
 
 
@@ -930,12 +1020,13 @@ def create_tool_execution_span_sync(
     Create a tool execution span (sync-only) with sensible defaults.
     """
     return create_genai_span_sync(
-        operation_name=GenAI.Values.OperationName.EXECUTE_TOOL,
-        tool_name=tool_name,
-        agent_id=agent_id,
-        conversation_id=conversation_id,
-        data_context=data_context,
-        additional_attributes=additional_attributes,
+        **_tool_execution_kwargs(
+            tool_name,
+            agent_id,
+            conversation_id,
+            data_context,
+            additional_attributes,
+        )
     )
 
 
@@ -951,12 +1042,13 @@ def create_agent_creation_span_sync(
     Create an agent creation span (sync-only) with sensible defaults.
     """
     return create_genai_span_sync(
-        operation_name=GenAI.Values.OperationName.CREATE_AGENT,
-        agent_id=agent_id or GenAI.Values.PhariaAgentId.AGENT_CREATION,
-        agent_name=agent_name,
-        conversation_id=conversation_id,
-        data_context=data_context,
-        additional_attributes=additional_attributes,
+        **_agent_creation_kwargs(
+            agent_id,
+            agent_name,
+            conversation_id,
+            data_context,
+            additional_attributes,
+        )
     )
 
 
@@ -973,13 +1065,14 @@ def create_agent_invocation_span_sync(
     Create an agent invocation span (sync-only) with sensible defaults.
     """
     return create_genai_span_sync(
-        operation_name=GenAI.Values.OperationName.INVOKE_AGENT,
-        agent_id=agent_id,
-        agent_name=agent_name,
-        model=model,
-        conversation_id=conversation_id,
-        data_context=data_context,
-        additional_attributes=additional_attributes,
+        **_agent_invocation_kwargs(
+            agent_id,
+            agent_name,
+            model,
+            conversation_id,
+            data_context,
+            additional_attributes,
+        )
     )
 
 
@@ -1024,13 +1117,14 @@ def create_chat_span_async(
         ```
     """
     return create_genai_span_async(
-        operation_name=GenAI.Values.OperationName.CHAT,
-        agent_id=agent_id,
-        agent_name=agent_name,
-        model=model,
-        conversation_id=conversation_id,
-        data_context=data_context,
-        additional_attributes=additional_attributes,
+        **_chat_kwargs(
+            agent_id,
+            agent_name,
+            model,
+            conversation_id,
+            data_context,
+            additional_attributes,
+        )
     )
 
 
@@ -1063,11 +1157,7 @@ def create_embeddings_span_async(
         ```
     """
     return create_genai_span_async(
-        operation_name=GenAI.Values.OperationName.EMBEDDINGS,
-        agent_name="embeddings_agent",
-        model=model,
-        data_context=data_context,
-        additional_attributes=additional_attributes,
+        **_embeddings_kwargs(model, data_context, additional_attributes)
     )
 
 
@@ -1105,12 +1195,13 @@ def create_tool_execution_span_async(
         ```
     """
     return create_genai_span_async(
-        operation_name=GenAI.Values.OperationName.EXECUTE_TOOL,
-        tool_name=tool_name,
-        agent_id=agent_id,
-        conversation_id=conversation_id,
-        data_context=data_context,
-        additional_attributes=additional_attributes,
+        **_tool_execution_kwargs(
+            tool_name,
+            agent_id,
+            conversation_id,
+            data_context,
+            additional_attributes,
+        )
     )
 
 
@@ -1147,12 +1238,13 @@ def create_agent_creation_span_async(
         ```
     """
     return create_genai_span_async(
-        operation_name=GenAI.Values.OperationName.CREATE_AGENT,
-        agent_id=agent_id or GenAI.Values.PhariaAgentId.AGENT_CREATION,
-        agent_name=agent_name,
-        conversation_id=conversation_id,
-        data_context=data_context,
-        additional_attributes=additional_attributes,
+        **_agent_creation_kwargs(
+            agent_id,
+            agent_name,
+            conversation_id,
+            data_context,
+            additional_attributes,
+        )
     )
 
 
@@ -1192,13 +1284,14 @@ def create_agent_invocation_span_async(
         ```
     """
     return create_genai_span_async(
-        operation_name=GenAI.Values.OperationName.INVOKE_AGENT,
-        agent_id=agent_id,
-        agent_name=agent_name,
-        model=model,
-        conversation_id=conversation_id,
-        data_context=data_context,
-        additional_attributes=additional_attributes,
+        **_agent_invocation_kwargs(
+            agent_id,
+            agent_name,
+            model,
+            conversation_id,
+            data_context,
+            additional_attributes,
+        )
     )
 
 
