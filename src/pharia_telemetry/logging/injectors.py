@@ -6,6 +6,7 @@ context to log records. These work with any logging framework that uses dictiona
 for structured data.
 """
 
+import abc
 import logging
 from typing import Any, Protocol
 
@@ -29,7 +30,52 @@ class ContextInjector(Protocol):
         ...
 
 
-class TraceContextInjector:
+class _BaseContextInjector(abc.ABC):
+    """Base class providing shared OTEL-availability checks and error handling.
+
+    Subclasses implement ``_inject_context`` with their domain-specific logic.
+    The base class handles:
+    - Warning on init when OpenTelemetry is unavailable
+    - Short-circuiting ``inject()`` when OpenTelemetry is unavailable
+    - Catching exceptions so injection never breaks the logging pipeline
+    """
+
+    def __init__(self) -> None:
+        if not OTEL_AVAILABLE:
+            logger.warning(
+                "OpenTelemetry not available - %s will be disabled",
+                type(self).__name__,
+            )
+
+    def inject(self, log_dict: dict[str, Any]) -> dict[str, Any]:
+        """Inject context into a log dictionary.
+
+        Args:
+            log_dict: Dictionary to enhance with context
+
+        Returns:
+            Enhanced dictionary with context
+        """
+        if not OTEL_AVAILABLE:
+            return log_dict
+
+        try:
+            self._inject_context(log_dict)
+        except Exception as e:
+            logger.debug("Failed to inject context: %s", e)
+
+        return log_dict
+
+    @abc.abstractmethod
+    def _inject_context(self, log_dict: dict[str, Any]) -> None:
+        """Inject context into *log_dict* in-place.
+
+        This method is only called when OpenTelemetry is available and is
+        wrapped in exception handling by the base class.
+        """
+
+
+class TraceContextInjector(_BaseContextInjector):
     """
     Injects OpenTelemetry trace context (trace_id, span_id) into log records.
 
@@ -59,55 +105,29 @@ class TraceContextInjector:
             trace_id_key: Key name for trace ID in log records
             span_id_key: Key name for span ID in log records
         """
+        super().__init__()
         self.include_trace_id = include_trace_id
         self.include_span_id = include_span_id
         self.trace_id_key = trace_id_key
         self.span_id_key = span_id_key
 
-        if not OTEL_AVAILABLE:
-            logger.warning(
-                "OpenTelemetry not available - TraceContextInjector will be disabled"
-            )
+    def _inject_context(self, log_dict: dict[str, Any]) -> None:
+        current_span = trace.get_current_span()
+        if not current_span:
+            return
 
-    def inject(self, log_dict: dict[str, Any]) -> dict[str, Any]:
-        """
-        Inject trace context into a log dictionary.
+        span_context = current_span.get_span_context()
+        if not span_context.is_valid:
+            return
 
-        Args:
-            log_dict: Dictionary to enhance with trace context
+        if self.include_trace_id:
+            log_dict[self.trace_id_key] = f"{span_context.trace_id:032x}"
 
-        Returns:
-            Enhanced dictionary with trace context
-        """
-        if not OTEL_AVAILABLE:
-            return log_dict
-
-        try:
-            # Get current span context
-            current_span = trace.get_current_span()
-            if not current_span:
-                return log_dict
-
-            span_context = current_span.get_span_context()
-            if not span_context.is_valid:
-                return log_dict
-
-            # Add trace ID if enabled
-            if self.include_trace_id:
-                log_dict[self.trace_id_key] = f"{span_context.trace_id:032x}"
-
-            # Add span ID if enabled
-            if self.include_span_id:
-                log_dict[self.span_id_key] = f"{span_context.span_id:016x}"
-
-        except Exception as e:
-            # Silently log the error to avoid breaking the logging pipeline
-            logger.debug("Failed to inject trace context: %s", e)
-
-        return log_dict
+        if self.include_span_id:
+            log_dict[self.span_id_key] = f"{span_context.span_id:016x}"
 
 
-class BaggageContextInjector:
+class BaggageContextInjector(_BaseContextInjector):
     """
     Injects OpenTelemetry baggage context into log records.
 
@@ -134,51 +154,23 @@ class BaggageContextInjector:
             prefix_filter: Optional prefix to filter baggage keys (e.g., "app.")
             exclude_keys: Optional set of baggage keys to exclude
         """
+        super().__init__()
         self.prefix_filter = prefix_filter
         self.exclude_keys = exclude_keys or set()
 
-        if not OTEL_AVAILABLE:
-            logger.warning(
-                "OpenTelemetry not available - BaggageContextInjector will be disabled"
-            )
+    def _inject_context(self, log_dict: dict[str, Any]) -> None:
+        current_baggage = baggage.get_all()
+        if not current_baggage:
+            return
 
-    def inject(self, log_dict: dict[str, Any]) -> dict[str, Any]:
-        """
-        Inject baggage context into a log dictionary.
-
-        Args:
-            log_dict: Dictionary to enhance with baggage context
-
-        Returns:
-            Enhanced dictionary with baggage context
-        """
-        if not OTEL_AVAILABLE:
-            return log_dict
-
-        try:
-            # Get all baggage items for comprehensive correlation
-            current_baggage = baggage.get_all()
-
-            if current_baggage:
-                for key, value in current_baggage.items():
-                    if not value:  # Skip empty values
-                        continue
-
-                    # Skip excluded keys
-                    if key in self.exclude_keys:
-                        continue
-
-                    # Apply prefix filter if specified
-                    if self.prefix_filter and not key.startswith(self.prefix_filter):
-                        continue
-
-                    log_dict[key] = value
-
-        except Exception as e:
-            # Silently log the error to avoid breaking the logging pipeline
-            logger.debug("Failed to inject baggage context: %s", e)
-
-        return log_dict
+        for key, value in current_baggage.items():
+            if not value:
+                continue
+            if key in self.exclude_keys:
+                continue
+            if self.prefix_filter and not key.startswith(self.prefix_filter):
+                continue
+            log_dict[key] = value
 
 
 class CompositeContextInjector:
@@ -293,10 +285,9 @@ def create_full_context_injector(
     """
     injectors: list[Any] = []
 
-    # Add trace context injector if needed
     if include_trace_id or include_span_id:
         injectors.append(
-            create_trace_injector(
+            TraceContextInjector(
                 include_trace_id=include_trace_id,
                 include_span_id=include_span_id,
                 trace_id_key=trace_id_key,
@@ -304,10 +295,9 @@ def create_full_context_injector(
             )
         )
 
-    # Add baggage context injector if needed
     if include_baggage:
         injectors.append(
-            create_baggage_injector(
+            BaggageContextInjector(
                 prefix_filter=baggage_prefix_filter,
                 exclude_keys=baggage_exclude_keys,
             )

@@ -9,8 +9,9 @@ Pydantic Logfire provides built-in baggage convenience functions and automatical
 baggage propagation. These are primarily for applications that don't use Pydantic Logfire.
 """
 
+import functools
 import logging
-from typing import Optional
+from typing import Any, Callable, Optional, ParamSpec, TypeVar
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,43 @@ except ImportError:
     logger.warning("OpenTelemetry not available - baggage propagation will be disabled")
 
 
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+def _require_otel(
+    fallback: Any,
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
+    """Decorator that guards a function behind OpenTelemetry availability.
+
+    When OTel is not installed, the decorated function returns the fallback value
+    and logs a debug message. When OTel is available but the function raises, the
+    exception is logged and the fallback is returned.
+
+    Args:
+        fallback: Value to return when OTel is unavailable or an error occurs.
+            Must be a valid instance of the decorated function's return type.
+    """
+
+    def decorator(fn: Callable[P, R]) -> Callable[P, R]:
+        @functools.wraps(fn)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            if not OTEL_AVAILABLE:
+                logger.debug("OpenTelemetry not available - skipping %s", fn.__name__)
+                return fallback  # type: ignore[no-any-return]
+
+            try:
+                return fn(*args, **kwargs)
+            except Exception as e:
+                logger.error("Failed in %s: %s", fn.__name__, e)
+                return fallback  # type: ignore[no-any-return]
+
+        return wrapper
+
+    return decorator
+
+
+@_require_otel(fallback=None)
 def set_baggage_span_attributes(
     span: Optional["trace.Span"] = None,
 ) -> None:
@@ -38,27 +76,19 @@ def set_baggage_span_attributes(
     Args:
         span: Target span (uses current span if None)
     """
-    if not OTEL_AVAILABLE:
-        logger.debug("OpenTelemetry not available - skipping span attributes")
+    target_span = span or trace.get_current_span()
+    if not target_span:
+        logger.warning("No span available to set attributes")
         return
 
-    try:
-        target_span = span or trace.get_current_span()
-        if not target_span:
-            logger.warning("No span available to set attributes")
-            return
-
-        # Get all baggage items and set them directly as span attributes
-        baggage_items = baggage.get_all()
-        for key, value in baggage_items.items():
-            if value is not None:
-                target_span.set_attribute(key, str(value))
-                logger.debug("Set span attribute %s from baggage: %s", key, value)
-
-    except Exception as e:
-        logger.error("Failed to set baggage span attributes: %s", e)
+    baggage_items = baggage.get_all()
+    for key, value in baggage_items.items():
+        if value is not None:
+            target_span.set_attribute(key, str(value))
+            logger.debug("Set span attribute %s from baggage: %s", key, value)
 
 
+@_require_otel(fallback=None)
 def set_gen_ai_span_attributes(
     operation_name: str,
     agent_id: str,
@@ -79,40 +109,30 @@ def set_gen_ai_span_attributes(
         conversation_id: Optional conversation ID
         model_name: Optional model name
     """
-    if not OTEL_AVAILABLE:
-        logger.debug("OpenTelemetry not available - skipping gen_ai span attributes")
+    target_span = span or trace.get_current_span()
+    if not target_span:
+        logger.warning("No span available to set gen_ai attributes")
         return
 
-    try:
-        target_span = span or trace.get_current_span()
-        if not target_span:
-            logger.warning("No span available to set gen_ai attributes")
-            return
+    from pharia_telemetry.sem_conv.gen_ai import GenAI
 
-        # Import here to avoid circular imports
-        from pharia_telemetry.sem_conv.gen_ai import GenAI
+    target_span.set_attribute(GenAI.OPERATION_NAME, operation_name)
+    target_span.set_attribute(GenAI.AGENT_ID, agent_id)
 
-        # Set required GenAI semantic convention attributes
-        target_span.set_attribute(GenAI.OPERATION_NAME, operation_name)
-        target_span.set_attribute(GenAI.AGENT_ID, agent_id)
+    if conversation_id:
+        target_span.set_attribute(GenAI.CONVERSATION_ID, str(conversation_id))
 
-        # Set optional attributes
-        if conversation_id:
-            target_span.set_attribute(GenAI.CONVERSATION_ID, str(conversation_id))
+    if model_name:
+        target_span.set_attribute(GenAI.REQUEST_MODEL, model_name)
 
-        if model_name:
-            target_span.set_attribute(GenAI.REQUEST_MODEL, model_name)
-
-        logger.debug(
-            "Set gen_ai span attributes - operation: %s, agent: %s",
-            operation_name,
-            agent_id,
-        )
-
-    except Exception as e:
-        logger.error("Failed to set gen_ai span attributes: %s", e)
+    logger.debug(
+        "Set gen_ai span attributes - operation: %s, agent: %s",
+        operation_name,
+        agent_id,
+    )
 
 
+@_require_otel(fallback=None)
 def set_baggage_item(key: str, value: str) -> None:
     """
     Set a baggage item in the current context.
@@ -121,17 +141,11 @@ def set_baggage_item(key: str, value: str) -> None:
         key: Baggage key
         value: Baggage value
     """
-    if not OTEL_AVAILABLE:
-        logger.debug("OpenTelemetry not available - skipping baggage setting")
-        return
-
-    try:
-        baggage.set_baggage(key, value)
-        logger.debug("Set baggage %s: %s", key, value)
-    except Exception as e:
-        logger.error("Failed to set baggage item %s: %s", key, e)
+    baggage.set_baggage(key, value)
+    logger.debug("Set baggage %s: %s", key, value)
 
 
+@_require_otel(fallback=None)
 def get_baggage_item(key: str) -> str | None:
     """
     Get a baggage item from the current context.
@@ -142,20 +156,12 @@ def get_baggage_item(key: str) -> str | None:
     Returns:
         Baggage value or None if not found
     """
-    if not OTEL_AVAILABLE:
-        logger.debug("OpenTelemetry not available - returning None for baggage")
-        return None
-
-    try:
-        value = baggage.get_baggage(key)
-        logger.debug("Retrieved baggage %s: %s", key, value)
-        # Ensure we return a string or None
-        return str(value) if value is not None else None
-    except Exception as e:
-        logger.error("Failed to get baggage item %s: %s", key, e)
-        return None
+    value = baggage.get_baggage(key)
+    logger.debug("Retrieved baggage %s: %s", key, value)
+    return str(value) if value is not None else None
 
 
+@_require_otel(fallback={})
 def get_all_baggage() -> dict[str, str]:
     """
     Get all baggage items from the current context.
@@ -163,15 +169,6 @@ def get_all_baggage() -> dict[str, str]:
     Returns:
         Dictionary of all baggage items
     """
-    if not OTEL_AVAILABLE:
-        logger.debug("OpenTelemetry not available - returning empty baggage")
-        return {}
-
-    try:
-        items = baggage.get_all()
-        logger.debug("Retrieved all baggage: %s", items)
-        # Convert all values to strings to ensure type safety
-        return {k: str(v) if v is not None else "" for k, v in items.items()}
-    except Exception as e:
-        logger.error("Failed to get all baggage items: %s", e)
-        return {}
+    items = baggage.get_all()
+    logger.debug("Retrieved all baggage: %s", items)
+    return {k: str(v) if v is not None else "" for k, v in items.items()}
